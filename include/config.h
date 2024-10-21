@@ -22,6 +22,15 @@
 // The credentials of your WiFi router and the name and key of your
 // Azure Storage Account are set throug WiFi-Manager
 
+#define USED_MICROPHONE 0        // 0 = SPH0645LM4H, 1 = INMP441
+
+#define SOUNDSWITCHER_THRESHOLD "220"       // The arbitrary sound Threshold to toggle High/Low
+                                            // (Can be changed in WiFi-Manager)
+#define SOUNDSWITCHER_UPDATEINTERVAL 400    // Interval in ms for reading sound level
+#define SOUNDSWITCHER_READ_DELAYTIME 4000   // Delay in ms from switch to displayed value
+
+
+
 #define SENDINTERVAL_MINUTES   5    // Sendinterval in minutes (10 is recommended), in this interval                                        
                                       // data are sent to the Cloud (is limited to be not below 1 second)
 
@@ -105,6 +114,22 @@
 #define MAX_DATAVALUE 140.0             // Values above are treated as invalid
 #define MAGIC_NUMBER_INVALID 999.9      // Invalid values are replaced with this value (should be 999.9)
                                         // Not sure if it works with other values than 999.9
+
+//#define USE_SIMULATED_SENSORVALUES      // Activates simulated sensor values (sinus curve) or (test values)
+//#define USE_TEST_VALUES                 // Activates sending of test values, e.g. counter or last reset cause (see Code in main.cpp)
+                                        // if activated we select test values, not sinus curves
+
+#define SENSOR_1_OFFSET     0.0        // Calibration Offset to sensor No 1
+#define SENSOR_2_OFFSET     0.0        // Calibration Offset to sensor No 2
+#define SENSOR_3_OFFSET     0.0        // Calibration Offset to sensor No 3
+#define SENSOR_4_OFFSET     0.0        // Calibration Offset to sensor No 4
+
+// Not needed in version for Esp32
+#define SENSOR_1_FAHRENHEIT 0         // 1 = yes, 0 = no - Display in Fahrenheit scale
+#define SENSOR_2_FAHRENHEIT 0         // 1 = yes, 0 = no - Display in Fahrenheit scale
+#define SENSOR_3_FAHRENHEIT 0         // 1 = yes, 0 = no - Display in Fahrenheit scale
+#define SENSOR_4_FAHRENHEIT 0         // 1 = yes, 0 = no - Display in Fahrenheit scale
+
 
 //#define USE_SIMULATED_SENSORVALUES      // Activates simulated sensor values (sinus curve) or (test values)
 //#define USE_TEST_VALUES                 // Activates sending of test values, e.g. counter or last reset cause (see Code in main.cpp)
