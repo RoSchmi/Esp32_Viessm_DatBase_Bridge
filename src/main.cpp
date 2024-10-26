@@ -1,9 +1,9 @@
 #include <Arduino.h>
 
-// Program 'Esp32_WiFiManager_HeatingSurvey' Branch Master
+// Program 'Esp32_Viessm_DatBase_Bridge' Branch Master
 #define PROGRAMVERSION "v1.2.1(b)"
-// Last updated: 2024_07_24
-// Copyright: RoSchmi 2021, 2024 License: Apache 2.0
+// Last updated: 2024_10_26
+// Copyright: RoSchmi 2024 License: Apache 2.0
 // the App was tested only on ESP32, not sure if it works on variations of ESP32
 // or ESP8266
 
