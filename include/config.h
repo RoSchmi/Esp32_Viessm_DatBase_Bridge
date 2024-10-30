@@ -18,6 +18,19 @@
 // within this interval are considered to be invalid)
 // Define other settings according to your needs
 
+
+#define VIESSMANN_USER_Base_URI  "api.viessmann.com/users/v1/users/me";
+
+#define VIESSMANN_IOT_Base_URI "api.viessmann.com/iot/v1/";
+
+/*
+private const string authorizeBaseUri = "https://iam.viessmann.com/idp/v3/authorize";
+private const string tokenBaseUri = "https://iam.viessmann.com/idp/v3/token";
+
+private const string userBaseUri = "https://api.viessmann.com/users/v1/users/me";
+
+private const string iotBaseUri = "https://api.viessmann.com/iot/v1/";
+*/
 //
 // The credentials of your WiFi router and the name and key of your
 // Azure Storage Account are set throug WiFi-Manager
@@ -31,7 +44,7 @@
 
 
 
-#define SENDINTERVAL_MINUTES   5    // Sendinterval in minutes (10 is recommended), in this interval                                        
+#define SENDINTERVAL_MINUTES   1    // Sendinterval in minutes (10 is recommended), in this interval                                        
                                       // data are sent to the Cloud (is limited to be not below 1 second)
 
 #define SERIAL_PRINT 1                     // 1 = yes, 0 = no. Select if Serial.print messages are printed
@@ -104,7 +117,8 @@
 #define  DST_STOP_HOUR               3       // 0 - 23
        
 
-#define TRANSPORT_PROTOCOL 0         // 0 = http, 1 = https
+#define TRANSPORT_PROTOCOL 0              // 0 = http, 1 = https
+#define VIESSMANN_TRANSPORT_PROTOCOL 1    // 0 = http, 1 = https
                                  
 
 #define USE_STATIC_IP 0                // 1 = use static IpAddress, 0 = use DHCP

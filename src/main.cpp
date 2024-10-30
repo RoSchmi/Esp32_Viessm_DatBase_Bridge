@@ -65,6 +65,7 @@
 #include "ESPAsyncWebServer.h"
 #include "defines.h"
 #include "config.h"
+#include "config_secret.h"
 #include "DateTime.h"
 #include <freertos/FreeRTOS.h>
 #include "Esp.h"
@@ -78,6 +79,9 @@
 #include "TableEntity.h"
 #include "AnalogTableEntity.h"
 #include "OnOffTableEntity.h"
+
+#include "ViessmannApiAccount.h"
+#include "ViessmannClient.h"
 
 #include "NTPClient_Generic.h"
 #include "Timezone_Generic.h"
@@ -238,12 +242,19 @@ int32_t sysTimeNtpDelta = 0;
 // Set transport protocol as defined in config.h
 static bool UseHttps_State = TRANSPORT_PROTOCOL == 0 ? false : true;
 
+static bool ViessmannUseHttps_State = VIESSMANN_TRANSPORT_PROTOCOL == 0 ? false : true;
+
 const char * CONFIG_FILE = "/ConfigSW.json";    // Configuration for Azure and threshold
                                                 // 'CONFIG_FILENAME' is used for Router Credentials
 
 #define AZURE_CONFIG_ACCOUNT_NAME "AzureStorageAccName"
 
 #define AZURE_CONFIG_ACCOUNT_KEY   "YourStorageAccountKey"
+
+char viessmannClientId[50] = VIESSMANN_CLIENT_ID;
+char viessmannAccessToken[1120] = VIESSMANN_ACCESS_TOKEN;
+char viessmannUserBaseUri[60] = VIESSMANN_USER_Base_URI;
+char viessmannIotBaseUri[60] = VIESSMANN_IOT_Base_URI;
 
 // Parameter for WiFi-Manager
 char azureAccountName[20] =  AZURE_CONFIG_ACCOUNT_NAME;
@@ -262,12 +273,15 @@ bool writeConfigFile();
 CloudStorageAccount myCloudStorageAccount(azureAccountName, azureAccountKey, UseHttps_State);
 CloudStorageAccount * myCloudStorageAccountPtr = &myCloudStorageAccount;
 
+ViessmannApiAccount myViessmannApiAccount(viessmannClientId, viessmannAccessToken, viessmannIotBaseUri, viessmannUserBaseUri, ViessmannUseHttps_State); 
+ViessmannApiAccount * myViessmannApiAccountPtr = &myViessmannApiAccount;
 void GPIOPinISR()
 {
   buttonPressed = true;
 }
 
 // function forward declarations
+az_http_status_code readIdFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
 void print_reset_reason(RESET_REASON reason);
 void scan_WIFI();
 String floToStr(float value);
@@ -994,7 +1008,7 @@ void setup()
     delay(10);
   }
   
-  Serial.print(F("\nStarting 'ESP32_WiFiManager_HeatingSurvey' Version "));
+  Serial.print(F("\nStarting 'ESP32_Viessm_DatBase_Bridge' Version "));
   Serial.print(PROGRAMVERSION);
   Serial.print(" using");  
   Serial.print(FS_Name);
@@ -1534,10 +1548,6 @@ void setup()
 
 }
 
-
-
-
-
 void loop()
 {
   check_status();   // Checks if WiFi is still connected
@@ -1792,6 +1802,7 @@ void loop()
               OnOffTableEntity onOffTableEntity(partitionKey, rowKey, az_span_create_from_str((char *)sampleTime),  OnOffPropertiesArray, onOffPropertyCount);
           
               onOffValueSet.OnOffSampleValues[i].insertCounter++;
+              
               
               // Store Entity to Azure Cloud   
              __unused az_http_status_code insertResult =  insertTableEntity(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedOnOffTableName.c_str(), onOffTableEntity, (char *)EtagBuffer);
@@ -2147,6 +2158,9 @@ float ReadAnalogSensor(int pSensorIndex)
                     {
                       // Line for the switch threshold
                       theRead = atoi((char *)sSwiThresholdStr) / 10; // dummy
+                      readIdFromApi(  myX509Certificate, myViessmannApiAccountPtr);
+
+
                     }                   
                     break;
               }
@@ -2281,6 +2295,34 @@ void makePartitionKey(const char * partitionKeyprefix, bool augmentWithYear, Dat
   }    
 }
 
+az_http_status_code readIdFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr)
+{
+
+  #if VIESSMANN_TRANSPORT_PROTOCOL == 1
+    static WiFiClientSecure wifi_client;
+  #else
+    static WiFiClient wifi_client;
+  #endif
+
+    #if VIESSMANN_TRANSPORT_PROTOCOL == 1
+    wifi_client.setCACert(myX509Certificate);
+  #endif
+
+  #if WORK_WITH_WATCHDOG == 1
+      esp_task_wdt_reset();
+  #endif
+
+  ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
+   #if SERIAL_PRINT == 1
+        Serial.println(myViessmannApiAccount.ClientId);
+      #endif
+
+      viessmannClient.GetUserName();
+  //az_http_status_code statusCode = viessmannClient.CreateTable(pTableName, dateTimeUTCNow, ContType::contApplicationIatomIxml, AcceptType::acceptApplicationIjson, returnContent, false);
+az_http_status_code statusCode = az_http_status_code::AZ_HTTP_STATUS_CODE_BAD_REQUEST;
+return statusCode;
+}
+
 az_http_status_code createTable(CloudStorageAccount *pAccountPtr, X509Certificate pCaCert, const char * pTableName)
 { 
 
@@ -2323,8 +2365,6 @@ az_http_status_code createTable(CloudStorageAccount *pAccountPtr, X509Certificat
   }
   else
   {
-    
-    
       sprintf(codeString, "%s %i", "Table Creation failed: ", az_http_status_code(statusCode));
       #if SERIAL_PRINT == 1   
         Serial.println((char *)codeString);
