@@ -2362,6 +2362,34 @@ void makePartitionKey(const char * partitionKeyprefix, bool augmentWithYear, Dat
   }    
 }
 
+bool extractSubString (const char * source, const String startTag, const String endTag, char * result, const int maxResultLength)
+{
+  char * start = strstr(source, startTag.c_str());
+  if (start)
+  {
+    start += startTag.length();
+    const char * end = strstr(start, endTag.c_str());
+    if (end)
+    {
+      size_t length = end - start < maxResultLength - 1 ? end - start : maxResultLength - 1;
+      strncpy(result, start, length);
+      result[length] = '\0';      
+      return true;
+    }
+    else
+    {
+      result[0] = '\0';
+      return false;
+    }
+  }
+  else
+  {
+     result[0] = '\0';
+     return false;
+  }
+}
+
+
 t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr)
 {
   #if VIESSMANN_TRANSPORT_PROTOCOL == 1
@@ -2391,7 +2419,21 @@ t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * m
       if (responseCode == t_http_codes::HTTP_CODE_OK)
       {
         uint16_t cntToCopy = strlen((char*)bufferStorePtr) < viessmannEquipmentBufLen ? strlen((char*)bufferStorePtr) : viessmannEquipmentBufLen -1;
-        memcpy(viessmannApiEquipment, bufferStorePtr, cntToCopy);       
+        memcpy(viessmannApiEquipment, bufferStorePtr, cntToCopy);
+
+        const char* json = (char *)viessmannApiEquipment;
+        JsonDocument doc;
+        deserializeJson(doc, json);
+        const char * idResult = doc["data"][0]["description"];
+        Serial.println("The idResult:");
+        Serial.println((char*)idResult);
+        /*
+        char theResult[100] = {};
+        //char theInput[] = "StartRolandEnd";   
+        extractSubString ((char*)bufferStorePtr, """id"":", ",", theResult, sizeof(theResult));
+        Serial.println("Extracted:");
+        Serial.println(theResult);
+        */
       }
   return responseCode; 
 }
