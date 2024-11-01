@@ -16,11 +16,19 @@
 #ifndef _VIESSMANNCLIENT_H_
 #define _VIESSMANNCLIENT_H_
 
+/*
+#define MAX_TABLENAME_LENGTH 50
+
+#define RESPONSE_BUFFER_LENGTH 1000
+
+#define REQUEST_BODY_BUFFER_LENGTH 900
+#define PROPERTIES_BUFFER_LENGTH 300
+#define AUTH_HEADER_BUFFER_LENGTH 100
+#define REQUEST_PREPARE_PTR_BUFFER_LENGTH 500
+*/
 
 class ViessmannClient
 {
-private:
-   char theVie[50] = "";
 
 public:
      
@@ -29,7 +37,8 @@ public:
     ViessmannClient(ViessmannApiAccount * account, const char * caCert, HTTPClient *httpClient, WiFiClient * wifiClient, uint8_t * bufferStore);
     ~ViessmannClient();
 
-    az_http_status_code GetUserName();
+    int GetUser(uint8_t * reponsePtr, uint16_t reponseBufferLength);
+    int GetEquipment(uint8_t* responseBuffer, uint16_t reponseBufferLength);
     
     /*
     az_http_status_code CreateTable(const char * tableName, DateTime pDateTimeUtcNow, ContType pContentType = ContType::contApplicationIatomIxml, AcceptType pAcceptType = AcceptType::acceptApplicationIjson, ResponseType pResponseType = ResponseType::returnContent, bool useSharedKeyLight = false);

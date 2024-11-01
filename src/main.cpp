@@ -1,8 +1,8 @@
 #include <Arduino.h>
 
 // Program 'Esp32_Viessm_DatBase_Bridge' Branch Master
-#define PROGRAMVERSION "v1.2.1(b)"
-// Last updated: 2024_10_26
+#define PROGRAMVERSION "v1.0.0"
+// Last updated: 2024_11_01
 // Copyright: RoSchmi 2024 License: Apache 2.0
 // the App was tested only on ESP32, not sure if it works on variations of ESP32
 // or ESP8266
@@ -115,10 +115,27 @@
 
 SET_LOOP_TASK_STACK_SIZE ( 16*1024 ); // 16KB
 
+//SET_LOOP_TASK_STACK_SIZE ( 20*1024 ); // 20KB
+
 // Allocate memory space in memory segment .dram0.bss, ptr to this memory space is later
 // passed to TableClient (is used there as the place for some buffers to preserve stack )
-uint8_t bufferStore[4000] {0};
+
+const uint16_t bufferStoreLength = 4000;
+uint8_t bufferStore[bufferStoreLength] {0};
 uint8_t * bufferStorePtr = &bufferStore[0];
+
+
+
+bool viessmannUserId_is_read = false;
+const uint16_t viessmannUserBufLen = 1000;
+uint8_t viessmannApiUser [viessmannUserBufLen] {0};
+
+const uint16_t viessmannEquipmentBufLen = 2500;
+uint8_t viessmannApiEquipment[viessmannEquipmentBufLen] {0};
+
+
+       
+
 
 //void * StackPtrAtStart;
 //void * StackPtrEnd;
@@ -160,6 +177,10 @@ const bool augmentPartitionKey = true;
 const bool augmentTableNameWithYear = true;
 
 typedef const char* X509Certificate;
+
+typedef int t_httpCode;
+
+t_httpCode httpCode = -1;
 
 // https://techcommunity.microsoft.com/t5/azure-storage/azure-storage-tls-critical-changes-are-almost-here-and-why-you/ba-p/2741581
 // baltimore_root_ca will expire in 2025, then take digicert_globalroot_g2_ca
@@ -281,7 +302,8 @@ void GPIOPinISR()
 }
 
 // function forward declarations
-az_http_status_code readIdFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
+t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
+t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
 void print_reset_reason(RESET_REASON reason);
 void scan_WIFI();
 String floToStr(float value);
@@ -1545,7 +1567,49 @@ void setup()
   Serial.println("");
 
   analogSensorMgr.SetReadInterval(ANALOG_SENSOR_READ_INTERVAL_SECONDS);
-
+  
+  
+  httpCode = readUserFromApi(myX509Certificate, myViessmannApiAccountPtr);
+  if (httpCode == t_http_codes::HTTP_CODE_OK)
+  {
+    Serial.println(F("UserId successfully read from Viessmann Cloud"));     
+  }
+  else
+  {     
+    Serial.println(F("Couldn't read UserId from Viessmann Cloud.\r\nError message is:"));
+    Serial.println((char*)bufferStorePtr);
+    ESP.restart();
+    while(true)
+    {
+      delay(500);
+    }
+  }
+  
+  httpCode = readEquipmentFromApi(myX509Certificate, myViessmannApiAccountPtr);
+  /*
+  while(true)
+    {
+      delay(500);
+    }
+  */
+  if (httpCode == t_http_codes::HTTP_CODE_OK)
+  {
+    Serial.println(F("Equipment successfully read from Viessmann Cloud"));
+    Serial.println((char*)viessmannApiEquipment);
+    Serial.println("\r\n");
+    Serial.println((char*)bufferStorePtr);
+        
+  }
+  else
+  {     
+    Serial.println(F("Couldn't read Equipment from Viessmann Cloud.\r\nError message is:"));
+    Serial.println((char*)bufferStorePtr);
+    ESP.restart();
+    while(true)
+    {
+      delay(500);
+    }
+  }
 }
 
 void loop()
@@ -2158,9 +2222,12 @@ float ReadAnalogSensor(int pSensorIndex)
                     {
                       // Line for the switch threshold
                       theRead = atoi((char *)sSwiThresholdStr) / 10; // dummy
-                      readIdFromApi(  myX509Certificate, myViessmannApiAccountPtr);
-
-
+                      /*
+                      if (!viessmannUserId_is_read)
+                      {
+                        readUserFromApi(myX509Certificate, myViessmannApiAccountPtr);
+                      }
+                      */
                     }                   
                     break;
               }
@@ -2295,7 +2362,41 @@ void makePartitionKey(const char * partitionKeyprefix, bool augmentWithYear, Dat
   }    
 }
 
-az_http_status_code readIdFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr)
+t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr)
+{
+  #if VIESSMANN_TRANSPORT_PROTOCOL == 1
+    static WiFiClientSecure wifi_client;
+  #else
+    static WiFiClient wifi_client;
+  #endif
+
+    #if VIESSMANN_TRANSPORT_PROTOCOL == 1
+    
+    wifi_client.setCACert(myX509Certificate);
+  #endif
+
+  #if WORK_WITH_WATCHDOG == 1
+      esp_task_wdt_reset();
+  #endif
+  ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
+   #if SERIAL_PRINT == 1
+        Serial.println(myViessmannApiAccount.ClientId);
+      #endif
+      memset(viessmannApiEquipment, 0, viessmannEquipmentBufLen);
+      memset(bufferStorePtr, 0, bufferStoreLength); 
+      t_httpCode responseCode = viessmannClient.GetEquipment(bufferStorePtr, bufferStoreLength);
+          
+      Serial.printf("\r\nEquipment httpResponseCode is: %d\r\n", responseCode);
+
+      if (responseCode == t_http_codes::HTTP_CODE_OK)
+      {
+        uint16_t cntToCopy = strlen((char*)bufferStorePtr) < viessmannEquipmentBufLen ? strlen((char*)bufferStorePtr) : viessmannEquipmentBufLen -1;
+        memcpy(viessmannApiEquipment, bufferStorePtr, cntToCopy);       
+      }
+  return responseCode; 
+}
+
+t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr)
 {
 
   #if VIESSMANN_TRANSPORT_PROTOCOL == 1
@@ -2316,11 +2417,18 @@ az_http_status_code readIdFromApi(X509Certificate pCaCert, ViessmannApiAccount *
    #if SERIAL_PRINT == 1
         Serial.println(myViessmannApiAccount.ClientId);
       #endif
-
-      viessmannClient.GetUserName();
-  //az_http_status_code statusCode = viessmannClient.CreateTable(pTableName, dateTimeUTCNow, ContType::contApplicationIatomIxml, AcceptType::acceptApplicationIjson, returnContent, false);
-az_http_status_code statusCode = az_http_status_code::AZ_HTTP_STATUS_CODE_BAD_REQUEST;
-return statusCode;
+      memset(viessmannApiUser, 0, viessmannUserBufLen);
+      memset(bufferStorePtr, 0, bufferStoreLength);
+      t_httpCode responseCode = viessmannClient.GetUser(bufferStorePtr, bufferStoreLength);
+      Serial.printf("\r\nUser httpResponseCode is: %d\r\n", responseCode);
+      
+      if (responseCode == t_http_codes::HTTP_CODE_OK)
+      {
+        uint16_t cntToCopy = strlen((char*)bufferStorePtr) < viessmannUserBufLen ? strlen((char*)bufferStorePtr) : viessmannUserBufLen -1;
+        memcpy(viessmannApiUser, bufferStorePtr, cntToCopy);
+        viessmannUserId_is_read = true;
+      }    
+return responseCode;
 }
 
 az_http_status_code createTable(CloudStorageAccount *pAccountPtr, X509Certificate pCaCert, const char * pTableName)

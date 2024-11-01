@@ -317,28 +317,28 @@ az_http_client_send_request(az_http_request const* request, az_http_response* re
           indexCtr += pageWidth;
         } 
         */
+  }
+  else
+  {
+
+    Serial.println("Before GET routine");
+    while (true)
+    {
+      Serial.println("Halted in Loop");
+      delay(5000);
+    }   
+
+
+    if (az_span_is_content_equal(requMethod, AZ_SPAN_LITERAL_FROM_STR("GET")))
+    {
+      // Not used
     }
     else
     {
-
-      Serial.println("Before GET routine");
-    while (true)
-   {
-     Serial.println("Halted in Loop");
-     delay(5000);
-   }   
-
-
-      if (az_span_is_content_equal(requMethod, AZ_SPAN_LITERAL_FROM_STR("GET")))
-      {
-        // Not used
-      }
-      else
-      {
-        // Not used
-      }
-      
+      // Not used
     }
+      
+  }
     
     
     //delay(500);
