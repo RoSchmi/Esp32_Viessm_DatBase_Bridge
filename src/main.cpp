@@ -130,6 +130,15 @@ bool viessmannUserId_is_read = false;
 const uint16_t viessmannUserBufLen = 1000;
 uint8_t viessmannApiUser [viessmannUserBufLen] {0};
 
+uint32_t Data_0_Id = 0;
+char Data_0_Description[35]= {0};
+char Data_0_Address_Street[35] {0};
+char Data_0_Address_HouseNumber[10] = {0};
+char Gateways_0_Serial[30] = {0};
+char Gateways_0_Devices_0_Id[30] = {0};
+//char Gateways_0_Devices_0_Serial[30] = {0};
+
+
 const uint16_t viessmannEquipmentBufLen = 2500;
 uint8_t viessmannApiEquipment[viessmannEquipmentBufLen] {0};
 
@@ -302,7 +311,7 @@ void GPIOPinISR()
 }
 
 // function forward declarations
-t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
+t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id);
 t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
 void print_reset_reason(RESET_REASON reason);
 void scan_WIFI();
@@ -1585,19 +1594,20 @@ void setup()
     }
   }
   
-  httpCode = readEquipmentFromApi(myX509Certificate, myViessmannApiAccountPtr);
-  /*
-  while(true)
-    {
-      delay(500);
-    }
-  */
+  httpCode = readEquipmentFromApi(myX509Certificate, myViessmannApiAccountPtr, &Data_0_Id, Data_0_Description, Data_0_Address_Street, Data_0_Address_HouseNumber, Gateways_0_Serial, Gateways_0_Devices_0_Id);
+  
   if (httpCode == t_http_codes::HTTP_CODE_OK)
   {
     Serial.println(F("Equipment successfully read from Viessmann Cloud"));
     Serial.println((char*)viessmannApiEquipment);
     Serial.println("\r\n");
     Serial.println((char*)bufferStorePtr);
+    Serial.println("Data_0_ID in main:");
+    Serial.printf("%d\r\n", Data_0_Id);
+    Serial.println("Gateways_0_Serial in main:");
+    Serial.println(Gateways_0_Serial);
+    Serial.println("Gateways_0_Devices_0_Id in main:");
+    Serial.println(Gateways_0_Devices_0_Id);
         
   }
   else
@@ -2390,7 +2400,7 @@ bool extractSubString (const char * source, const String startTag, const String 
 }
 
 
-t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr)
+t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id)
 {
   #if VIESSMANN_TRANSPORT_PROTOCOL == 1
     static WiFiClientSecure wifi_client;
@@ -2424,9 +2434,49 @@ t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * m
         const char* json = (char *)viessmannApiEquipment;
         JsonDocument doc;
         deserializeJson(doc, json);
-        const char * idResult = doc["data"][0]["description"];
-        Serial.println("The idResult:");
-        Serial.println((char*)idResult);
+        
+        uint32_t data_0_id = doc["data"][0]["id"];
+        const char * data_0_description = doc["data"][0]["description"];
+        const char * data_0_address_street = doc["data"][0]["address"]["street"];
+        const char * data_0_address_houseNumber = doc["data"][0]["address"]["houseNumber"];
+        const char * gateways_0_serial = doc["data"][0]["gateways"][0]["serial"];
+        const char * gateways_0_devices_0_id = doc["data"][0]["gateways"][0]["devices"][0]["id"];
+        
+        *p_data_0_id = data_0_id;
+        strcpy(p_data_0_description, data_0_description);
+        strcpy(p_data_0_address_street, data_0_address_street);
+        strcpy(p_data_0_address_houseNumber, data_0_address_houseNumber);
+
+        strcpy(p_gateways_0_serial, gateways_0_serial);
+        strcpy(p_gateways_0_devices_0_id, gateways_0_devices_0_id);
+
+
+        Serial.println("The devices_0_idResult:");
+        Serial.printf("%d\r\n", data_0_id);
+        Serial.println("The descriptionResult:");
+        Serial.println(data_0_description);
+        Serial.println("The streetResult:");
+        Serial.println(data_0_address_street);
+        Serial.println("The HousenumberResult:");
+        Serial.println(data_0_address_houseNumber);
+        
+        Serial.println("The gateways_0_serialResult:");
+        Serial.println(gateways_0_serial);
+
+        Serial.println("The gateways_0_devices_0_idResult:");
+        Serial.println(gateways_0_devices_0_id);
+        
+        
+        
+        
+        
+
+       // sprintf(data_0_id, "%d", doc["data"][0]["id"]);  
+        
+        
+
+
+
         /*
         char theResult[100] = {};
         //char theInput[] = "StartRolandEnd";   
