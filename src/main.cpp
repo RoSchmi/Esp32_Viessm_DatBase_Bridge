@@ -120,7 +120,10 @@ SET_LOOP_TASK_STACK_SIZE ( 16*1024 ); // 16KB
 // Allocate memory space in memory segment .dram0.bss, ptr to this memory space is later
 // passed to TableClient (is used there as the place for some buffers to preserve stack )
 
-const uint16_t bufferStoreLength = 4000;
+//const uint16_t bufferStoreLength = 4000;
+
+
+const uint16_t bufferStoreLength = 60000;
 uint8_t bufferStore[bufferStoreLength] {0};
 uint8_t * bufferStorePtr = &bufferStore[0];
 
@@ -130,21 +133,14 @@ bool viessmannUserId_is_read = false;
 const uint16_t viessmannUserBufLen = 1000;
 uint8_t viessmannApiUser [viessmannUserBufLen] {0};
 
+bool viessmannEquip_is_read = false;
 uint32_t Data_0_Id = 0;
-char Data_0_Description[35]= {0};
-char Data_0_Address_Street[35] {0};
-char Data_0_Address_HouseNumber[10] = {0};
-char Gateways_0_Serial[30] = {0};
-char Gateways_0_Devices_0_Id[30] = {0};
-//char Gateways_0_Devices_0_Serial[30] = {0};
-
-
-const uint16_t viessmannEquipmentBufLen = 2500;
-uint8_t viessmannApiEquipment[viessmannEquipmentBufLen] {0};
-
-
-       
-
+const int equipBufLen = 35;
+char Data_0_Description[equipBufLen]= {0};
+char Data_0_Address_Street[equipBufLen] {0};
+char Data_0_Address_HouseNumber[equipBufLen] = {0};
+char Gateways_0_Serial[equipBufLen] = {0};
+char Gateways_0_Devices_0_Id[equipBufLen] = {0};
 
 //void * StackPtrAtStart;
 //void * StackPtrEnd;
@@ -213,7 +209,7 @@ X509Certificate myX509Certificate = digicert_globalroot_g2_ca;
   
   // Ptr to HTTPClient
   static HTTPClient * httpPtr = &http;
-  
+
 // Define Datacontainer with SendInterval and InvalidateInterval as defined in config.h
 int sendIntervalSeconds = (SENDINTERVAL_MINUTES * 60) < 1 ? 1 : (SENDINTERVAL_MINUTES * 60);
 
@@ -311,7 +307,9 @@ void GPIOPinISR()
 }
 
 // function forward declarations
-t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id);
+t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t Data_0_Id, const char * p_gateways_0_serial, const char * p_gateways_0_devices_0_id);
+  
+t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, const int equipBufLen, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id);
 t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
 void print_reset_reason(RESET_REASON reason);
 void scan_WIFI();
@@ -1594,21 +1592,12 @@ void setup()
     }
   }
   
-  httpCode = readEquipmentFromApi(myX509Certificate, myViessmannApiAccountPtr, &Data_0_Id, Data_0_Description, Data_0_Address_Street, Data_0_Address_HouseNumber, Gateways_0_Serial, Gateways_0_Devices_0_Id);
+ httpCode = readEquipmentFromApi(myX509Certificate, myViessmannApiAccountPtr, &Data_0_Id, equipBufLen, Data_0_Description, Data_0_Address_Street, Data_0_Address_HouseNumber, Gateways_0_Serial, Gateways_0_Devices_0_Id);
   
   if (httpCode == t_http_codes::HTTP_CODE_OK)
   {
     Serial.println(F("Equipment successfully read from Viessmann Cloud"));
-    Serial.println((char*)viessmannApiEquipment);
-    Serial.println("\r\n");
-    Serial.println((char*)bufferStorePtr);
-    Serial.println("Data_0_ID in main:");
-    Serial.printf("%d\r\n", Data_0_Id);
-    Serial.println("Gateways_0_Serial in main:");
-    Serial.println(Gateways_0_Serial);
-    Serial.println("Gateways_0_Devices_0_Id in main:");
-    Serial.println(Gateways_0_Devices_0_Id);
-        
+    viessmannEquip_is_read = true;
   }
   else
   {     
@@ -1620,7 +1609,27 @@ void setup()
       delay(500);
     }
   }
+  httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id);
+  
+  if (httpCode == t_http_codes::HTTP_CODE_OK)
+  {
+    Serial.println(F("Features successfully read from Viessmann Cloud"));
+    
+  }
+  else
+  {     
+    Serial.println(F("Couldn't read Features from Viessmann Cloud.\r\nError message is:"));
+    Serial.println((char*)bufferStorePtr);
+    ESP.restart();
+    while(true)
+    {
+      delay(500);
+    }
+  }
+
 }
+
+
 
 void loop()
 {
@@ -2399,8 +2408,77 @@ bool extractSubString (const char * source, const String startTag, const String 
   }
 }
 
+t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, const uint32_t data_0_id, const char * p_gateways_0_serial, const char * p_gateways_0_devices_0_id)
+{
+  #if VIESSMANN_TRANSPORT_PROTOCOL == 1
+    static WiFiClientSecure wifi_client;
+  #else
+    static WiFiClient wifi_client;
+  #endif
 
-t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id)
+    #if VIESSMANN_TRANSPORT_PROTOCOL == 1
+    
+    wifi_client.setCACert(myX509Certificate);
+  #endif
+
+  #if WORK_WITH_WATCHDOG == 1
+      esp_task_wdt_reset();
+  #endif
+  ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
+  #if SERIAL_PRINT == 1
+      Serial.println(myViessmannApiAccount.ClientId);
+  #endif
+  memset(bufferStorePtr, '\0', bufferStoreLength);
+  t_httpCode responseCode = viessmannClient.GetFeatures(bufferStorePtr, bufferStoreLength, data_0_id, Gateways_0_Serial, Gateways_0_Devices_0_Id);
+   Serial.printf("\r\nFeatures httpResponseCode is: %d\r\n", responseCode);
+
+      if (responseCode == t_http_codes::HTTP_CODE_OK)
+      {
+        /*
+        const char* json = (char *)bufferStorePtr;
+        JsonDocument doc;
+        deserializeJson(doc, json);
+        const char * tempOutside = doc["data"][95]["properties"]["value"]["unit"];
+        */
+        //Serial.println("Temperature outside");
+        //Serial.printf("\r\n%s\r\n", tempOutside);
+        
+        //Serial.println((char *)bufferStorePtr);
+
+        
+
+        /*
+        uint32_t data_0_id = doc["data"][0]["id"];
+        const char * data_0_description = doc["data"][0]["description"];
+        const char * data_0_address_street = doc["data"][0]["address"]["street"];
+        const char * data_0_address_houseNumber = doc["data"][0]["address"]["houseNumber"];
+        const char * gateways_0_serial = doc["data"][0]["gateways"][0]["serial"];
+        const char * gateways_0_devices_0_id = doc["data"][0]["gateways"][0]["devices"][0]["id"];
+        */
+
+       // *p_data_0_id = data_0_id;
+       // memset(bufferStorePtr, '\0', bufferStoreLength);
+        /*
+        memset(p_data_0_description, '\0', equipBufLen);
+        memset(p_data_0_address_street, '\0', equipBufLen);
+        memset(p_data_0_address_houseNumber,'\0', equipBufLen);
+
+        memset(p_gateways_0_serial,'\0', equipBufLen);
+        memset(p_gateways_0_devices_0_id,'\0', equipBufLen);
+
+        strncpy(p_data_0_description, data_0_description, equipBufLen - 1);
+        strncpy(p_data_0_address_street, data_0_address_street, equipBufLen - 1);
+        strncpy(p_data_0_address_houseNumber, data_0_address_houseNumber, equipBufLen - 1);
+
+        strncpy(p_gateways_0_serial, gateways_0_serial, equipBufLen - 1);
+        strncpy(p_gateways_0_devices_0_id, gateways_0_devices_0_id, equipBufLen - 1);
+        */       
+      }
+  return responseCode;        
+
+}
+
+t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, const int equipBufLen, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id)
 {
   #if VIESSMANN_TRANSPORT_PROTOCOL == 1
     static WiFiClientSecure wifi_client;
@@ -2420,18 +2498,15 @@ t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * m
    #if SERIAL_PRINT == 1
         Serial.println(myViessmannApiAccount.ClientId);
       #endif
-      memset(viessmannApiEquipment, 0, viessmannEquipmentBufLen);
-      memset(bufferStorePtr, 0, bufferStoreLength); 
+      
+      memset(bufferStorePtr, '\0', bufferStoreLength); 
       t_httpCode responseCode = viessmannClient.GetEquipment(bufferStorePtr, bufferStoreLength);
           
       Serial.printf("\r\nEquipment httpResponseCode is: %d\r\n", responseCode);
 
       if (responseCode == t_http_codes::HTTP_CODE_OK)
       {
-        uint16_t cntToCopy = strlen((char*)bufferStorePtr) < viessmannEquipmentBufLen ? strlen((char*)bufferStorePtr) : viessmannEquipmentBufLen -1;
-        memcpy(viessmannApiEquipment, bufferStorePtr, cntToCopy);
-
-        const char* json = (char *)viessmannApiEquipment;
+        const char* json = (char *)bufferStorePtr;
         JsonDocument doc;
         deserializeJson(doc, json);
         
@@ -2443,54 +2518,27 @@ t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * m
         const char * gateways_0_devices_0_id = doc["data"][0]["gateways"][0]["devices"][0]["id"];
         
         *p_data_0_id = data_0_id;
-        strcpy(p_data_0_description, data_0_description);
-        strcpy(p_data_0_address_street, data_0_address_street);
-        strcpy(p_data_0_address_houseNumber, data_0_address_houseNumber);
+        memset(bufferStorePtr, '\0', bufferStoreLength);
+         
+        memset(p_data_0_description, '\0', equipBufLen);
+        memset(p_data_0_address_street, '\0', equipBufLen);
+        memset(p_data_0_address_houseNumber,'\0', equipBufLen);
 
-        strcpy(p_gateways_0_serial, gateways_0_serial);
-        strcpy(p_gateways_0_devices_0_id, gateways_0_devices_0_id);
+        memset(p_gateways_0_serial,'\0', equipBufLen);
+        memset(p_gateways_0_devices_0_id,'\0', equipBufLen);
 
+        strncpy(p_data_0_description, data_0_description, equipBufLen - 1);
+        strncpy(p_data_0_address_street, data_0_address_street, equipBufLen - 1);
+        strncpy(p_data_0_address_houseNumber, data_0_address_houseNumber, equipBufLen - 1);
 
-        Serial.println("The devices_0_idResult:");
-        Serial.printf("%d\r\n", data_0_id);
-        Serial.println("The descriptionResult:");
-        Serial.println(data_0_description);
-        Serial.println("The streetResult:");
-        Serial.println(data_0_address_street);
-        Serial.println("The HousenumberResult:");
-        Serial.println(data_0_address_houseNumber);
-        
-        Serial.println("The gateways_0_serialResult:");
-        Serial.println(gateways_0_serial);
-
-        Serial.println("The gateways_0_devices_0_idResult:");
-        Serial.println(gateways_0_devices_0_id);
-        
-        
-        
-        
-        
-
-       // sprintf(data_0_id, "%d", doc["data"][0]["id"]);  
-        
-        
-
-
-
-        /*
-        char theResult[100] = {};
-        //char theInput[] = "StartRolandEnd";   
-        extractSubString ((char*)bufferStorePtr, """id"":", ",", theResult, sizeof(theResult));
-        Serial.println("Extracted:");
-        Serial.println(theResult);
-        */
+        strncpy(p_gateways_0_serial, gateways_0_serial, equipBufLen - 1);
+        strncpy(p_gateways_0_devices_0_id, gateways_0_devices_0_id, equipBufLen - 1);       
       }
   return responseCode; 
 }
 
 t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr)
 {
-
   #if VIESSMANN_TRANSPORT_PROTOCOL == 1
     static WiFiClientSecure wifi_client;
   #else
@@ -2509,8 +2557,8 @@ t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myVies
    #if SERIAL_PRINT == 1
         Serial.println(myViessmannApiAccount.ClientId);
       #endif
-      memset(viessmannApiUser, 0, viessmannUserBufLen);
-      memset(bufferStorePtr, 0, bufferStoreLength);
+      memset(viessmannApiUser,'\0', viessmannUserBufLen);
+      memset(bufferStorePtr,'\0', bufferStoreLength);
       t_httpCode responseCode = viessmannClient.GetUser(bufferStorePtr, bufferStoreLength);
       Serial.printf("\r\nUser httpResponseCode is: %d\r\n", responseCode);
       

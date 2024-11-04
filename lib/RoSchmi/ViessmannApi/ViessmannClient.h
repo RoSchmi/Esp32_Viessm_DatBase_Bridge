@@ -13,6 +13,8 @@
 
 #include "ViessmannApiAccount.h"
 
+#include "ArduinoJson.h"
+
 #ifndef _VIESSMANNCLIENT_H_
 #define _VIESSMANNCLIENT_H_
 
@@ -37,8 +39,9 @@ public:
     ViessmannClient(ViessmannApiAccount * account, const char * caCert, HTTPClient *httpClient, WiFiClient * wifiClient, uint8_t * bufferStore);
     ~ViessmannClient();
 
-    int GetUser(uint8_t * reponsePtr, uint16_t reponseBufferLength);
-    int GetEquipment(uint8_t* responseBuffer, uint16_t reponseBufferLength);
+    int GetUser(uint8_t * reponsePtr, const uint16_t reponseBufferLength);
+    int GetEquipment(uint8_t* responseBuffer, const uint16_t reponseBufferLength);
+    int GetFeatures(uint8_t* responseBuffer, const uint16_t reponseBufferLength, const uint32_t data_0_id, const char * gateways_0_serial, const char * gateways_0_devices_0_id);
     
     /*
     az_http_status_code CreateTable(const char * tableName, DateTime pDateTimeUtcNow, ContType pContentType = ContType::contApplicationIatomIxml, AcceptType pAcceptType = AcceptType::acceptApplicationIjson, ResponseType pResponseType = ResponseType::returnContent, bool useSharedKeyLight = false);

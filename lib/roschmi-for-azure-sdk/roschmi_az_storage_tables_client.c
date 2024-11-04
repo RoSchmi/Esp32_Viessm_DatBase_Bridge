@@ -1,3 +1,4 @@
+// This is the original Copyright desclaimer, changes by RoSchmi
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // SPDX-License-Identifier: MIT
 
