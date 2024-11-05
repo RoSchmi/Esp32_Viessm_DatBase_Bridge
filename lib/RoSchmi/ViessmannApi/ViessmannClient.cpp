@@ -68,12 +68,19 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
     t_httpCode httpResponseCode = _viessmannHttpPtr ->GET();   
     if (httpResponseCode > 0) 
     { 
-        
+        //char newStr[50] = {0};
         JsonDocument doc;
-        
-         deserializeJson(doc, _viessmannHttpPtr ->getStream());
+        //deserializeJson(doc, String("Hello" ));
+        //deserializeJson(doc, newStr );
+
+        StaticJsonDocument<64> filter;
+        filter["data"][0]["feature"] = true,
+        filter["data"][0]["timestamp"] = true,
+        filter["data"][0]["properties"] = true 
+        ;
+        deserializeJson(doc, _viessmannHttpPtr ->getStream(),DeserializationOption::Filter(filter));
          
-        //JsonArray data = doc["data"];
+        
         //const char * tempOutside = data[95]["feature"];
         //const char * tempOutside = doc["features"]["data"][95]["feature"];
         const char * data_0_feature = doc["data"][0]["feature"];
@@ -85,7 +92,13 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
         const char * data_60_feature = doc["data"][60]["feature"];
         const char * data_70_feature = doc["data"][70]["feature"];
         const char * data_77_feature = doc["data"][77]["feature"];
-        const char * data_95_feature = doc["data"][95]["feature"];
+        const char * data_91_feature = doc["data"][91]["feature"];        
+        const char * data_91_unit    = doc["data"][91]["properties"]["value"]["unit"];
+        float data_91_value    = doc["data"][91]["properties"]["value"]["value"];
+        const char * data_95_feature = doc["data"][95]["feature"];        
+        const char * data_95_unit    = doc["data"][95]["properties"]["value"]["unit"];
+        float data_95_value    = doc["data"][95]["properties"]["value"]["value"];
+
         //const char * tempOutside = doc["data"][95]["properties"]["value"]["unit"];
         Serial.println("data_0_feature:");
         Serial.println(data_0_feature);
@@ -105,8 +118,19 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
         Serial.println(data_70_feature);
         Serial.println("data_77_feature:");
         Serial.println(data_77_feature);
+        Serial.println("data_91_feature:");
+        Serial.println(data_91_feature);
+        Serial.println("data_91_unit:");
+        Serial.println(data_91_unit);
+        Serial.println("data_91_value:");
+        Serial.println(data_91_value);
         Serial.println("data_95_feature:");
         Serial.println(data_95_feature);
+        Serial.println("data_95_unit:");
+        Serial.println(data_95_unit);
+        Serial.println("data_95_value:");
+        Serial.println(data_95_value);
+
         /*
         WiFiClient *stream = _viessmannHttpPtr ->getStreamPtr();        
         uint32_t bytesRead = 0;
