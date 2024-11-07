@@ -41,7 +41,6 @@ class ViessmannApiSelection
     Feature _93_heating_dhw_main_temperature;
     Feature _95_heating_temperature_outside;
     
-
 };
 
 #endif

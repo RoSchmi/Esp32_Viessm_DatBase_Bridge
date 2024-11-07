@@ -54,7 +54,6 @@ t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * g
 
     char GatewaySerial[30] = {0};
 
-
     String addendum = "features/installations/" + (String)InstallationId + "/gateways/" + (String(gateways_0_serial) + "/devices/" + String(gateways_0_devices_0_id) + "/features"); 
     String encodedUrl = _viessmannAccountPtr -> UriEndPointIot + addendum;
     String authorizationHeader = "Bearer " + _viessmannAccountPtr ->AccessToken;
@@ -62,7 +61,8 @@ t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * g
 
     //https://arduinojson.org/v7/how-to/use-arduinojson-with-httpclient/
 
-    _viessmannHttpPtr ->useHTTP10(true);
+    _viessmannHttpPtr ->useHTTP10(true);   // Must be reset to false for Azure requests
+                                           // Is needed to load the long features JSON string 
     _viessmannHttpPtr ->begin(encodedUrl);
     _viessmannHttpPtr ->addHeader("Authorization", authorizationHeader);
     t_httpCode httpResponseCode = _viessmannHttpPtr ->GET();   
@@ -76,58 +76,11 @@ t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * g
         ;
         deserializeJson(doc, _viessmannHttpPtr ->getStream(),DeserializationOption::Filter(filter));
 
-        /* 
-        const char * data_91_feature = doc["data"][91]["feature"];        
-        const char * data_91_unit    = doc["data"][91]["properties"]["value"]["unit"];
-        float data_91_value    = doc["data"][91]["properties"]["value"]["value"];
-        const char * data_95_feature = doc["data"][95]["feature"];        
-        const char * data_95_unit    = doc["data"][95]["properties"]["value"]["unit"];
-        float data_95_value    = doc["data"][95]["properties"]["value"]["value"];
-        */
-
-     
-        /*
-        Serial.println("data_0_feature:");
-        Serial.println(data_0_feature);
-        Serial.println("data_1_feature:");
-        Serial.println(data_1_feature);
-        Serial.println("data_3_feature:");
-        Serial.println(data_3_feature);
-        Serial.println("data_20_feature:");
-        Serial.println(data_20_feature);
-        Serial.println("data_40_feature:");
-        Serial.println(data_40_feature);
-        */
-        
-        /*
-        Serial.println("data_50_feature:");
-        Serial.println(data_50_feature);
-        Serial.println("data_60_feature:");
-        Serial.println(data_60_feature);
-        Serial.println("data_70_feature:");
-        Serial.println(data_70_feature);
-        Serial.println("data_77_feature:");
-        Serial.println(data_77_feature);
-        */
-       /*
-        Serial.println("data_91_feature:");
-        Serial.println(data_91_feature);
-        Serial.println("data_91_unit:");
-        Serial.println(data_91_unit);
-        Serial.println("data_91_value:");
-        Serial.println(data_91_value);
-        Serial.println("data_95_feature:");
-        Serial.println(data_95_feature);
-        Serial.println("data_95_unit:");
-        Serial.println(data_95_unit);
-        Serial.println("data_95_value:");
-        Serial.println(data_95_value);
-        */
-        
-        
         int nameLen = apiSelectionPtr ->nameLenght;
         int stampLen = apiSelectionPtr -> stampLength;
         int valLen = apiSelectionPtr -> valueLength;
+        
+        // From the long Features JSON string get the selected entities
         strncpy(apiSelectionPtr -> _3_temperature_main.name, doc["data"][3]["feature"], nameLen - 1);
         strncpy(apiSelectionPtr-> _3_temperature_main.timestamp, doc["data"][3]["timestamp"], stampLen - 1);
         snprintf(apiSelectionPtr -> _3_temperature_main.value, valLen - 1, "%.1f", (float)doc["data"][3]["properties"]["value"]["value"]);
@@ -192,62 +145,26 @@ t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * g
         strncpy(apiSelectionPtr-> _95_heating_temperature_outside.timestamp, doc["data"][95]["timestamp"], stampLen - 1);
         snprintf(apiSelectionPtr -> _95_heating_temperature_outside.value, valLen - 1, "%.1f", (float)doc["data"][95]["properties"]["value"]["value"]);
         
-
-
-        //int ret = snprintf(buffer, sizeof buffer, "%f", myFloat);
         /*
-        strncpy(apiSelection._5_Boiler_temperature.name, doc["data"][5]["feature"], nameLen);
-        strncpy(apiSelection._5_Boiler_temperature.timestamp, doc["data"][5]["timestamp"], stampLen);
-        strncpy(apiSelection._5_Boiler_temperature.value, doc["data"][5]["value"], valLen);
-        */
-
-        
-        Serial.println("Print in ViessmannClient again:");
-        Serial.println(apiSelectionPtr -> _3_temperature_main.name);
-        Serial.println(apiSelectionPtr -> _3_temperature_main.timestamp);
-        Serial.println(apiSelectionPtr -> _3_temperature_main.value);
-        
-
-        /*
+        // Alternative way to printout the begin of Features JSON string
         WiFiClient *stream = _viessmannHttpPtr ->getStreamPtr();        
         uint32_t bytesRead = 0;
         uint32_t chunkSize = 1000;
-        uint32_t maxBytesRead = 90000;
-        uint16_t maxRounds = 73;
+        //uint16_t maxRounds = 73;
+        uint16_t maxRounds = 10;
         uint16_t rounds = 0;
         char chunkBuffer[chunkSize +1] = {0};
 
-        
-        //while(_viessmannHttpPtr ->connected() && stream->available())
         while(rounds < maxRounds)
         {
-        
            bytesRead += stream ->readBytes(chunkBuffer, chunkSize);
            chunkBuffer[chunkSize] = '\0';
            Serial.println(chunkBuffer);
-
            //strcat((char *)responseBuffer, chunkBuffer);
-
            //responseBuffer += chunkSize;
            Serial.printf("\r\n%d\r\n", bytesRead);
         }
-        */
-        
-        
-        
-        /*
-        String payload = _viessmannHttpPtr ->getString();      
-        int charsToCopy = payload.length() < reponseBufferLength ? payload.length() : reponseBufferLength;
-        Serial.printf("\r\nPayloadLength = %d\r\n", payload.length());
-        Serial.printf("\r\nCharsToCopyLength = %d\r\n", charsToCopy);
-        int payloadLength = payload.length();
-        int toCopy = 800;
-        for (int i = 0; i < toCopy; i++)
-        //for (int i = 0; i < charsToCopy; i++)
-        {
-            responseBuffer[i] = payload[payloadLength - toCopy + i];
-        }
-         */              
+        */               
     } 
     else 
     {

@@ -1,7 +1,5 @@
 #include "ViessmannApiSelection.h"
 
-
-
 // Constructor
 ViessmannApiSelection::ViessmannApiSelection()
 {}
