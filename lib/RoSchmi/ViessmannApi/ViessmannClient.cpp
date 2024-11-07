@@ -67,38 +67,23 @@ t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * g
     _viessmannHttpPtr ->addHeader("Authorization", authorizationHeader);
     t_httpCode httpResponseCode = _viessmannHttpPtr ->GET();   
     if (httpResponseCode > 0) 
-    { 
-        //char newStr[50] = {0};
+    {   
         JsonDocument doc;
-        //deserializeJson(doc, String("Hello" ));
-        //deserializeJson(doc, newStr );
-
         StaticJsonDocument<64> filter;
         filter["data"][0]["feature"] = true,
         filter["data"][0]["timestamp"] = true,
         filter["data"][0]["properties"] = true 
         ;
         deserializeJson(doc, _viessmannHttpPtr ->getStream(),DeserializationOption::Filter(filter));
-         
-        
-        
-        //const char * data_0_feature = doc["data"][0]["feature"];
-        //const char * data_1_feature = doc["data"][1]["feature"];
-        //const char * data_3_feature = doc["data"][3]["feature"];
-        //const char * data_3_timestamp = doc["data"][3]["timestamp"];
-        //const char * data_20_feature = doc["data"][20]["feature"];
-        //const char * data_40_feature = doc["data"][40]["feature"];
-        //const char * data_50_feature = doc["data"][50]["feature"];
-        //const char * data_60_feature = doc["data"][60]["feature"];
-        //const char * data_70_feature = doc["data"][70]["feature"];
-        //const char * data_77_feature = doc["data"][77]["feature"];
+
+        /* 
         const char * data_91_feature = doc["data"][91]["feature"];        
         const char * data_91_unit    = doc["data"][91]["properties"]["value"]["unit"];
         float data_91_value    = doc["data"][91]["properties"]["value"]["value"];
         const char * data_95_feature = doc["data"][95]["feature"];        
         const char * data_95_unit    = doc["data"][95]["properties"]["value"]["unit"];
         float data_95_value    = doc["data"][95]["properties"]["value"]["value"];
-
+        */
 
      
         /*
@@ -124,6 +109,7 @@ t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * g
         Serial.println("data_77_feature:");
         Serial.println(data_77_feature);
         */
+       /*
         Serial.println("data_91_feature:");
         Serial.println(data_91_feature);
         Serial.println("data_91_unit:");
@@ -136,6 +122,7 @@ t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * g
         Serial.println(data_95_unit);
         Serial.println("data_95_value:");
         Serial.println(data_95_value);
+        */
         
         
         int nameLen = apiSelectionPtr ->nameLenght;
@@ -172,6 +159,38 @@ t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * g
         strncpy(apiSelectionPtr -> _23_heating_curve_slope.name, doc["data"][23]["feature"], nameLen - 1);
         strncpy(apiSelectionPtr-> _23_heating_curve_slope.timestamp, doc["data"][23]["timestamp"], stampLen - 1);
         snprintf(apiSelectionPtr -> _23_heating_curve_slope.value, valLen - 1, "%.1f", (float)doc["data"][23]["properties"]["slope"]["value"]);
+        
+        strncpy(apiSelectionPtr -> _77_temperature_supply.name, doc["data"][77]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _77_temperature_supply.timestamp, doc["data"][77]["timestamp"], stampLen - 1);
+        snprintf(apiSelectionPtr -> _77_temperature_supply.value, valLen - 1, "%.1f", (float)doc["data"][77]["properties"]["value"]["value"]);
+        
+        strncpy(apiSelectionPtr -> _85_heating_dhw_charging.name, doc["data"][85]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _85_heating_dhw_charging.timestamp, doc["data"][85]["timestamp"], stampLen - 1);
+        strcpy(apiSelectionPtr -> _85_heating_dhw_charging.value, (boolean)doc["data"][85]["properties"]["active"]["value"] ? "true" : "false");
+        
+        strncpy(apiSelectionPtr -> _86_heating_dhw_pump_status.name, doc["data"][86]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr -> _86_heating_dhw_pump_status.timestamp, doc["data"][86]["timestamp"], stampLen - 1);
+        strncpy(apiSelectionPtr -> _86_heating_dhw_pump_status.value, doc["data"][86]["properties"]["status"]["value"], valLen -1);
+        
+        strncpy(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.name, doc["data"][88]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.timestamp, doc["data"][88]["timestamp"], stampLen - 1);
+        strncpy(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.value, doc["data"][88]["properties"]["status"]["value"], valLen -1);
+        
+        strncpy(apiSelectionPtr -> _90_heating_dhw_cylinder_temperature.name, doc["data"][90]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _90_heating_dhw_cylinder_temperature.timestamp, doc["data"][90]["timestamp"], stampLen - 1);
+        snprintf(apiSelectionPtr -> _90_heating_dhw_cylinder_temperature.value, valLen - 1, "%.1f", (float)doc["data"][90]["properties"]["value"]["value"]);
+        
+        strncpy(apiSelectionPtr -> _92_heating_dhw_outlet_temperature.name, doc["data"][92]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _92_heating_dhw_outlet_temperature.timestamp, doc["data"][92]["timestamp"], stampLen - 1);
+        snprintf(apiSelectionPtr -> _92_heating_dhw_outlet_temperature.value, valLen - 1, "%.1f", (float)doc["data"][92]["properties"]["value"]["value"]);
+        
+        strncpy(apiSelectionPtr -> _93_heating_dhw_main_temperature.name, doc["data"][93]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _93_heating_dhw_main_temperature.timestamp, doc["data"][93]["timestamp"], stampLen - 1);
+        snprintf(apiSelectionPtr -> _93_heating_dhw_main_temperature.value, valLen - 1, "%.1f", (float)doc["data"][93]["properties"]["value"]["value"]);
+        
+        strncpy(apiSelectionPtr -> _95_heating_temperature_outside.name, doc["data"][95]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _95_heating_temperature_outside.timestamp, doc["data"][95]["timestamp"], stampLen - 1);
+        snprintf(apiSelectionPtr -> _95_heating_temperature_outside.value, valLen - 1, "%.1f", (float)doc["data"][95]["properties"]["value"]["value"]);
         
 
 
@@ -234,7 +253,8 @@ t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * g
     {
         Serial.printf("Fehler bei der Anfrage, HTTP-Code: %d\n", httpResponseCode);
     }
-    //_viessmannHttpPtr->end();
+    _viessmannHttpPtr ->useHTTP10(false);
+    _viessmannHttpPtr->end();
     return httpResponseCode;
 }
     
@@ -260,7 +280,7 @@ t_httpCode ViessmannClient::GetEquipment(uint8_t* responseBuffer, const uint16_t
     {
         Serial.printf("Fehler bei der Anfrage, HTTP-Code: %d\n", httpResponseCode);
     }
-    //_viessmannHttpPtr->end();
+    _viessmannHttpPtr->end();
     return httpResponseCode;
 } 
 

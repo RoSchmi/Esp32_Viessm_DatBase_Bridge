@@ -2496,10 +2496,18 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_8_burner_hours.name, apiSelectionPtr ->_8_burner_hours.value);
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_8_burner_starts.name, apiSelectionPtr ->_8_burner_starts.value);
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_9_burner_is_active.name, apiSelectionPtr ->_9_burner_is_active.value);
-        
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_23_heating_curve_shift.name, apiSelectionPtr ->_23_heating_curve_shift.value);
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_23_heating_curve_slope.name, apiSelectionPtr ->_23_heating_curve_slope.value);
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_77_temperature_supply.name, apiSelectionPtr ->_77_temperature_supply.value);
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_85_heating_dhw_charging.name, apiSelectionPtr ->_85_heating_dhw_charging.value);
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_86_heating_dhw_pump_status.name, apiSelectionPtr ->_86_heating_dhw_pump_status.value);
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_88_heating_dhw_pump_primary_status.name, apiSelectionPtr ->_88_heating_dhw_pump_primary_status.value);
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_90_heating_dhw_cylinder_temperature.name, apiSelectionPtr ->_90_heating_dhw_cylinder_temperature.value);
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_92_heating_dhw_outlet_temperature.name, apiSelectionPtr ->_92_heating_dhw_outlet_temperature.value);
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_93_heating_dhw_main_temperature.name, apiSelectionPtr ->_93_heating_dhw_main_temperature.value);
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_95_heating_temperature_outside.name, apiSelectionPtr ->_95_heating_temperature_outside.value);
         
+         
 
         /*
         Serial.println(apiSelection._5_Boiler_temperature.name);
