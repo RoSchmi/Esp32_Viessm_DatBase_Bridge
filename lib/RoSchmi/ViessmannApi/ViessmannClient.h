@@ -12,6 +12,7 @@
 #include "azure/core/az_http.h"
 
 #include "ViessmannApiAccount.h"
+#include "ViessmannApiSelection.h"
 
 #include "ArduinoJson.h"
 
@@ -41,7 +42,7 @@ public:
 
     int GetUser(uint8_t * reponsePtr, const uint16_t reponseBufferLength);
     int GetEquipment(uint8_t* responseBuffer, const uint16_t reponseBufferLength);
-    int GetFeatures(uint8_t* responseBuffer, const uint16_t reponseBufferLength, const uint32_t data_0_id, const char * gateways_0_serial, const char * gateways_0_devices_0_id);
+    int GetFeatures(const uint32_t data_0_id, const char * gateways_0_serial, const char * gateways_0_devices_0_id, ViessmannApiSelection * apiSelectionPtr);
     
     /*
     az_http_status_code CreateTable(const char * tableName, DateTime pDateTimeUtcNow, ContType pContentType = ContType::contApplicationIatomIxml, AcceptType pAcceptType = AcceptType::acceptApplicationIjson, ResponseType pResponseType = ResponseType::returnContent, bool useSharedKeyLight = false);

@@ -82,6 +82,7 @@
 
 #include "ViessmannApiAccount.h"
 #include "ViessmannClient.h"
+#include "ViessmannApiSelection.h"
 
 #include "NTPClient_Generic.h"
 #include "Timezone_Generic.h"
@@ -113,9 +114,9 @@
 // --> configure stack size dynamically from code to 16384
 // https://community.platformio.org/t/esp32-stack-configuration-reloaded/20994/4
 
-SET_LOOP_TASK_STACK_SIZE ( 16*1024 ); // 16KB
+//SET_LOOP_TASK_STACK_SIZE ( 16*1024 ); // 16KB
 
-//SET_LOOP_TASK_STACK_SIZE ( 20*1024 ); // 20KB
+SET_LOOP_TASK_STACK_SIZE ( 20*1024 ); // 20KB
 
 // Allocate memory space in memory segment .dram0.bss, ptr to this memory space is later
 // passed to TableClient (is used there as the place for some buffers to preserve stack )
@@ -123,7 +124,7 @@ SET_LOOP_TASK_STACK_SIZE ( 16*1024 ); // 16KB
 //const uint16_t bufferStoreLength = 4000;
 
 
-const uint16_t bufferStoreLength = 60000;
+const uint16_t bufferStoreLength = 40000;
 uint8_t bufferStore[bufferStoreLength] {0};
 uint8_t * bufferStorePtr = &bufferStore[0];
 
@@ -187,6 +188,43 @@ typedef int t_httpCode;
 
 t_httpCode httpCode = -1;
 
+
+ViessmannApiSelection viessmannApiSelection;
+ViessmannApiSelection * viessmannApiSelectionPtr = &viessmannApiSelection;
+
+
+
+
+typedef struct
+{
+  char type[10] = "";
+  char value[10] = "";
+  char unit[10] = "";
+}value;
+
+typedef struct
+{
+  char type[10] = "";
+  char value[10] = "";
+  char unit[10] = "";
+}status;
+
+typedef struct
+{
+  char type[10] = "";
+  char value[10] = "";
+  char unit[10] = "";
+}hours;
+
+typedef struct
+{
+  char type[10] = "";
+  char value[10] = "";
+  char unit[10] = "";
+}starts;
+
+
+
 // https://techcommunity.microsoft.com/t5/azure-storage/azure-storage-tls-critical-changes-are-almost-here-and-why-you/ba-p/2741581
 // baltimore_root_ca will expire in 2025, then take digicert_globalroot_g2_ca
 //X509Certificate myX509Certificate = baltimore_root_ca;
@@ -214,6 +252,9 @@ X509Certificate myX509Certificate = digicert_globalroot_g2_ca;
 int sendIntervalSeconds = (SENDINTERVAL_MINUTES * 60) < 1 ? 1 : (SENDINTERVAL_MINUTES * 60);
 
 DataContainerWio dataContainer(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INVALIDATEINTERVAL_MINUTES % 60, 0), (float)MIN_DATAVALUE, (float)MAX_DATAVALUE, (float)MAGIC_NUMBER_INVALID);
+
+DataContainerWio viesmAnalogdataCont01(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INVALIDATEINTERVAL_MINUTES % 60, 0), (float)MIN_DATAVALUE, (float)MAX_DATAVALUE, (float)MAGIC_NUMBER_INVALID);
+
 
 AnalogSensorMgr analogSensorMgr(MAGIC_NUMBER_INVALID);
 
@@ -307,7 +348,7 @@ void GPIOPinISR()
 }
 
 // function forward declarations
-t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t Data_0_Id, const char * p_gateways_0_serial, const char * p_gateways_0_devices_0_id);
+t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t Data_0_Id, const char * p_gateways_0_serial, const char * p_gateways_0_devices_0_id, ViessmannApiSelection * apiSelectionPtr);
   
 t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, const int equipBufLen, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id);
 t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
@@ -1609,12 +1650,17 @@ void setup()
       delay(500);
     }
   }
-  httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id);
+  
+  
+  httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id, viessmannApiSelectionPtr);
   
   if (httpCode == t_http_codes::HTTP_CODE_OK)
   {
     Serial.println(F("Features successfully read from Viessmann Cloud"));
-    
+    while(true)
+    {
+      delay(500);
+    }
   }
   else
   {     
@@ -1626,7 +1672,7 @@ void setup()
       delay(500);
     }
   }
-
+  
 }
 
 
@@ -1677,6 +1723,8 @@ void loop()
       dataContainer.SetNewValue(1, dateTimeUTCNow, ReadAnalogSensor(1));
       dataContainer.SetNewValue(2, dateTimeUTCNow, ReadAnalogSensor(2));
       dataContainer.SetNewValue(3, dateTimeUTCNow, ReadAnalogSensor(3));
+
+     // viesmAnalogdataCont01.SetNewValue(0, dateTimeUTCNow, ReadAnalogSensor(0));
 
       
 
@@ -2408,16 +2456,20 @@ bool extractSubString (const char * source, const String startTag, const String 
   }
 }
 
-t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, const uint32_t data_0_id, const char * p_gateways_0_serial, const char * p_gateways_0_devices_0_id)
-{
-  #if VIESSMANN_TRANSPORT_PROTOCOL == 1
+/*
+#if SERIAL_PRINT == 1
+      Serial.println(myViessmannApiAccount.ClientId);
+*/
+
+t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, const uint32_t data_0_id, const char * p_gateways_0_serial, const char * p_gateways_0_devices_0_id, ViessmannApiSelection * apiSelectionPtr)
+{  
+   #if VIESSMANN_TRANSPORT_PROTOCOL == 1
     static WiFiClientSecure wifi_client;
   #else
     static WiFiClient wifi_client;
   #endif
 
-    #if VIESSMANN_TRANSPORT_PROTOCOL == 1
-    
+  #if VIESSMANN_TRANSPORT_PROTOCOL == 1 
     wifi_client.setCACert(myX509Certificate);
   #endif
 
@@ -2425,15 +2477,24 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
       esp_task_wdt_reset();
   #endif
   ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
-  #if SERIAL_PRINT == 1
-      Serial.println(myViessmannApiAccount.ClientId);
-  #endif
+  
   memset(bufferStorePtr, '\0', bufferStoreLength);
-  t_httpCode responseCode = viessmannClient.GetFeatures(bufferStorePtr, bufferStoreLength, data_0_id, Gateways_0_Serial, Gateways_0_Devices_0_Id);
-   Serial.printf("\r\nFeatures httpResponseCode is: %d\r\n", responseCode);
 
-      if (responseCode == t_http_codes::HTTP_CODE_OK)
+  t_httpCode responseCode = viessmannClient.GetFeatures(data_0_id, Gateways_0_Serial, Gateways_0_Devices_0_Id, apiSelectionPtr);
+  Serial.printf("\r\nFeatures httpResponseCode is: %d\r\n", responseCode);
+  if (responseCode == t_http_codes::HTTP_CODE_OK)
       {
+
+        Serial.println("Printing again:");
+        Serial.println(apiSelectionPtr ->_3_temperature_main.name);
+        Serial.println(apiSelectionPtr ->_3_temperature_main.timestamp);
+        Serial.println(apiSelectionPtr ->_3_temperature_main.value);
+        /*
+        Serial.println(apiSelection._5_Boiler_temperature.name);
+        Serial.println(apiSelection._5_Boiler_temperature.timestamp);
+        Serial.println(apiSelection._5_Boiler_temperature.value);
+        */
+
         /*
         const char* json = (char *)bufferStorePtr;
         JsonDocument doc;
@@ -2474,8 +2535,9 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
         strncpy(p_gateways_0_devices_0_id, gateways_0_devices_0_id, equipBufLen - 1);
         */       
       }
-  return responseCode;        
 
+  //responseCode = t_http_codes::HTTP_CODE_OK;
+  return responseCode;
 }
 
 t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, const int equipBufLen, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id)

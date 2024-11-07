@@ -40,10 +40,9 @@ void ViessmannApiAccount::ChangeAccountParams(String clientId, String accessToke
     */
 }
 
-
-
 /**
  * destructor
  */
 ViessmannApiAccount::~ViessmannApiAccount()
 {}
+

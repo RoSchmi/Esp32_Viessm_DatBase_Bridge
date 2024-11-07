@@ -47,7 +47,7 @@ ViessmannClient::ViessmannClient(ViessmannApiAccount * account, const char * caC
 
 
 
-t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t reponseBufferLength, const uint32_t data_0_id, const char * gateways_0_serial, const char * gateways_0_devices_0_id)
+t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * gateways_0_serial, const char * gateways_0_devices_0_id, ViessmannApiSelection * apiSelectionPtr)
 {
     char InstallationId[20] = {0};
     sprintf(InstallationId, "%d", data_0_id);
@@ -81,17 +81,17 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
         deserializeJson(doc, _viessmannHttpPtr ->getStream(),DeserializationOption::Filter(filter));
          
         
-        //const char * tempOutside = data[95]["feature"];
-        //const char * tempOutside = doc["features"]["data"][95]["feature"];
-        const char * data_0_feature = doc["data"][0]["feature"];
-        const char * data_1_feature = doc["data"][1]["feature"];
-        const char * data_3_feature = doc["data"][3]["feature"];
-        const char * data_20_feature = doc["data"][20]["feature"];
-        const char * data_40_feature = doc["data"][40]["feature"];
-        const char * data_50_feature = doc["data"][50]["feature"];
-        const char * data_60_feature = doc["data"][60]["feature"];
-        const char * data_70_feature = doc["data"][70]["feature"];
-        const char * data_77_feature = doc["data"][77]["feature"];
+        
+        //const char * data_0_feature = doc["data"][0]["feature"];
+        //const char * data_1_feature = doc["data"][1]["feature"];
+        //const char * data_3_feature = doc["data"][3]["feature"];
+        //const char * data_3_timestamp = doc["data"][3]["timestamp"];
+        //const char * data_20_feature = doc["data"][20]["feature"];
+        //const char * data_40_feature = doc["data"][40]["feature"];
+        //const char * data_50_feature = doc["data"][50]["feature"];
+        //const char * data_60_feature = doc["data"][60]["feature"];
+        //const char * data_70_feature = doc["data"][70]["feature"];
+        //const char * data_77_feature = doc["data"][77]["feature"];
         const char * data_91_feature = doc["data"][91]["feature"];        
         const char * data_91_unit    = doc["data"][91]["properties"]["value"]["unit"];
         float data_91_value    = doc["data"][91]["properties"]["value"]["value"];
@@ -99,7 +99,9 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
         const char * data_95_unit    = doc["data"][95]["properties"]["value"]["unit"];
         float data_95_value    = doc["data"][95]["properties"]["value"]["value"];
 
-        //const char * tempOutside = doc["data"][95]["properties"]["value"]["unit"];
+
+     
+        /*
         Serial.println("data_0_feature:");
         Serial.println(data_0_feature);
         Serial.println("data_1_feature:");
@@ -110,6 +112,9 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
         Serial.println(data_20_feature);
         Serial.println("data_40_feature:");
         Serial.println(data_40_feature);
+        */
+        
+        /*
         Serial.println("data_50_feature:");
         Serial.println(data_50_feature);
         Serial.println("data_60_feature:");
@@ -118,6 +123,7 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
         Serial.println(data_70_feature);
         Serial.println("data_77_feature:");
         Serial.println(data_77_feature);
+        */
         Serial.println("data_91_feature:");
         Serial.println(data_91_feature);
         Serial.println("data_91_unit:");
@@ -130,6 +136,28 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
         Serial.println(data_95_unit);
         Serial.println("data_95_value:");
         Serial.println(data_95_value);
+        
+        
+        int nameLen = apiSelectionPtr ->nameLenght;
+        int stampLen = apiSelectionPtr -> stampLength;
+        int valLen = apiSelectionPtr -> valueLength;
+        strncpy(apiSelectionPtr -> _3_temperature_main.name, doc["data"][3]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _3_temperature_main.timestamp, doc["data"][3]["timestamp"], stampLen - 1);
+        snprintf(apiSelectionPtr -> _3_temperature_main.value, valLen - 1, "%f", (float)doc["data"][3]["properties"]["value"]["value"]);
+        
+        //int ret = snprintf(buffer, sizeof buffer, "%f", myFloat);
+        /*
+        strncpy(apiSelection._5_Boiler_temperature.name, doc["data"][5]["feature"], nameLen);
+        strncpy(apiSelection._5_Boiler_temperature.timestamp, doc["data"][5]["timestamp"], stampLen);
+        strncpy(apiSelection._5_Boiler_temperature.value, doc["data"][5]["value"], valLen);
+        */
+
+        
+        Serial.println("Name again:");
+        Serial.println(apiSelectionPtr -> _3_temperature_main.name);
+        Serial.println(apiSelectionPtr -> _3_temperature_main.timestamp);
+        Serial.println(apiSelectionPtr -> _3_temperature_main.value);
+        
 
         /*
         WiFiClient *stream = _viessmannHttpPtr ->getStreamPtr();        
