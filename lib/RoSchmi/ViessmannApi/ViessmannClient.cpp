@@ -143,8 +143,38 @@ t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * g
         int valLen = apiSelectionPtr -> valueLength;
         strncpy(apiSelectionPtr -> _3_temperature_main.name, doc["data"][3]["feature"], nameLen - 1);
         strncpy(apiSelectionPtr-> _3_temperature_main.timestamp, doc["data"][3]["timestamp"], stampLen - 1);
-        snprintf(apiSelectionPtr -> _3_temperature_main.value, valLen - 1, "%f", (float)doc["data"][3]["properties"]["value"]["value"]);
+        snprintf(apiSelectionPtr -> _3_temperature_main.value, valLen - 1, "%.1f", (float)doc["data"][3]["properties"]["value"]["value"]);
         
+        strncpy(apiSelectionPtr -> _5_boiler_temperature.name, doc["data"][5]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _5_boiler_temperature.timestamp, doc["data"][5]["timestamp"], stampLen - 1);
+        snprintf(apiSelectionPtr -> _5_boiler_temperature.value, valLen - 1, "%.1f", (float)doc["data"][5]["properties"]["value"]["value"]);
+        
+        strncpy(apiSelectionPtr -> _8_burner_hours.name, doc["data"][8]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _8_burner_hours.timestamp, doc["data"][8]["timestamp"], stampLen - 1);
+        snprintf(apiSelectionPtr -> _8_burner_hours.value, valLen - 1, "%.0f", (float)doc["data"][8]["properties"]["hours"]["value"]);
+        
+        strncpy(apiSelectionPtr -> _8_burner_starts.name, doc["data"][8]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _8_burner_starts.timestamp, doc["data"][8]["timestamp"], stampLen - 1);
+        snprintf(apiSelectionPtr -> _8_burner_starts.value, valLen - 1, "%.0f", (float)doc["data"][8]["properties"]["starts"]["value"]);
+        
+        strncpy(apiSelectionPtr -> _9_burner_is_active.name, doc["data"][9]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _9_burner_is_active.timestamp, doc["data"][9]["timestamp"], stampLen - 1);
+        strcpy(apiSelectionPtr -> _9_burner_is_active.value, (boolean)doc["data"][9]["properties"]["active"]["value"] ? "true" : "false");
+        
+        strncpy(apiSelectionPtr -> _11_circulation_pump_status.name, doc["data"][11]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr -> _11_circulation_pump_status.timestamp, doc["data"][11]["timestamp"], stampLen - 1);
+        strncpy(apiSelectionPtr -> _11_circulation_pump_status.value, doc["data"][11]["properties"]["status"]["value"], valLen -1);
+        
+        strncpy(apiSelectionPtr -> _23_heating_curve_shift.name, doc["data"][23]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _23_heating_curve_shift.timestamp, doc["data"][23]["timestamp"], stampLen - 1);
+        snprintf(apiSelectionPtr -> _23_heating_curve_shift.value, valLen - 1, "%.1f", (float)doc["data"][23]["properties"]["shift"]["value"]);
+        
+        strncpy(apiSelectionPtr -> _23_heating_curve_slope.name, doc["data"][23]["feature"], nameLen - 1);
+        strncpy(apiSelectionPtr-> _23_heating_curve_slope.timestamp, doc["data"][23]["timestamp"], stampLen - 1);
+        snprintf(apiSelectionPtr -> _23_heating_curve_slope.value, valLen - 1, "%.1f", (float)doc["data"][23]["properties"]["slope"]["value"]);
+        
+
+
         //int ret = snprintf(buffer, sizeof buffer, "%f", myFloat);
         /*
         strncpy(apiSelection._5_Boiler_temperature.name, doc["data"][5]["feature"], nameLen);
@@ -153,7 +183,7 @@ t_httpCode ViessmannClient::GetFeatures(const uint32_t data_0_id, const char * g
         */
 
         
-        Serial.println("Name again:");
+        Serial.println("Print in ViessmannClient again:");
         Serial.println(apiSelectionPtr -> _3_temperature_main.name);
         Serial.println(apiSelectionPtr -> _3_temperature_main.timestamp);
         Serial.println(apiSelectionPtr -> _3_temperature_main.value);

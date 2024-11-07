@@ -1657,10 +1657,12 @@ void setup()
   if (httpCode == t_http_codes::HTTP_CODE_OK)
   {
     Serial.println(F("Features successfully read from Viessmann Cloud"));
+    /*
     while(true)
     {
       delay(500);
     }
+    */
   }
   else
   {     
@@ -2485,10 +2487,20 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
   if (responseCode == t_http_codes::HTTP_CODE_OK)
       {
 
-        Serial.println("Printing again:");
-        Serial.println(apiSelectionPtr ->_3_temperature_main.name);
-        Serial.println(apiSelectionPtr ->_3_temperature_main.timestamp);
-        Serial.println(apiSelectionPtr ->_3_temperature_main.value);
+        Serial.println("Printing in Main again:");
+        //Serial.println(apiSelectionPtr ->_3_temperature_main.name);
+        //Serial.println(apiSelectionPtr ->_3_temperature_main.timestamp);
+
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_3_temperature_main.name, apiSelectionPtr ->_3_temperature_main.value);       
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_5_boiler_temperature.name, apiSelectionPtr ->_5_boiler_temperature.value);       
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_8_burner_hours.name, apiSelectionPtr ->_8_burner_hours.value);
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_8_burner_starts.name, apiSelectionPtr ->_8_burner_starts.value);
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_9_burner_is_active.name, apiSelectionPtr ->_9_burner_is_active.value);
+        
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_23_heating_curve_shift.name, apiSelectionPtr ->_23_heating_curve_shift.value);
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_23_heating_curve_slope.name, apiSelectionPtr ->_23_heating_curve_slope.value);
+        
+
         /*
         Serial.println(apiSelection._5_Boiler_temperature.name);
         Serial.println(apiSelection._5_Boiler_temperature.timestamp);
