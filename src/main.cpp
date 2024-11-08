@@ -137,9 +137,10 @@ static bool ViessmannUseHttps_State = VIESSMANN_TRANSPORT_PROTOCOL == 0 ? false 
 ViessmannApiAccount myViessmannApiAccount(viessmannClientId, viessmannAccessToken, viessmannIotBaseUri, viessmannUserBaseUri, ViessmannUseHttps_State); 
 ViessmannApiAccount * myViessmannApiAccountPtr = &myViessmannApiAccount;
 
-ViessmannApiSelection viessmannApiSelection;
+ViessmannApiSelection viessmannApiSelection(DateTime(), TimeSpan(VIESSMANN_API_READ_INTERVAL_SECONDS));
 ViessmannApiSelection * viessmannApiSelectionPtr = &viessmannApiSelection;
 
+//DataContainerWio dataContainer(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INVALIDATEINTERVAL_MINUTES % 60, 0), (float)MIN_DATAVALUE, (float)MAX_DATAVALUE, (float)MAGIC_NUMBER_INVALID);
 
 
 bool viessmannUserId_is_read = false;

@@ -89,7 +89,8 @@ private const string iotBaseUri = "https://api.viessmann.com/iot/v1/";
                                            // long time, so that it 'never' happens                                      
 
 #define ANALOG_SENSOR_READ_INTERVAL_SECONDS 0   // Analog sensors are read with this interval (seconds, can be 0)
-                                                
+
+#define VIESSMANN_API_READ_INTERVAL_SECONDS 65  //Vales from the Viessmann Api are read with this timeinterval                                             
 
 #define WORK_WITH_WATCHDOG 0              // 1 = yes, 0 = no, Watchdog is used (1) or not used (0)
                                            // should be 1 for normal operation and 0 for testing

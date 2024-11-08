@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "DateTime.h"
 
 #ifndef _VIESSMANNAPISELECTION_H_
 #define _VIESSMANNAPISELECTION_H_
@@ -13,6 +14,9 @@ class ViessmannApiSelection
     int  valueLength = FEATUREVALUELENGTH;
     int nameLenght = FEATURENAMELENGTH;
     int stampLength = FEATURESTAMPLENGTH;
+
+    DateTime  lastReadTime;
+    TimeSpan readInterval;
     
     typedef struct
     {     
@@ -21,7 +25,7 @@ class ViessmannApiSelection
         char value[FEATUREVALUELENGTH] = {0};       
     }Feature;
     
-    ViessmannApiSelection();
+    ViessmannApiSelection(DateTime pLastReadTime, TimeSpan pReadInterval);
     ~ViessmannApiSelection();
 
     Feature _3_temperature_main;
