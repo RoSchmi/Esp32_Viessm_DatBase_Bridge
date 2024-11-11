@@ -116,7 +116,7 @@
 
 //SET_LOOP_TASK_STACK_SIZE ( 16*1024 ); // 16KB
 
-SET_LOOP_TASK_STACK_SIZE ( 20*1024 ); // 20KB
+SET_LOOP_TASK_STACK_SIZE ( 32*1024 ); // 20KB
 
 // Allocate memory space in memory segment .dram0.bss, ptr to this memory space is later
 // passed to TableClient (is used there as the place for some buffers to preserve stack )
@@ -200,39 +200,6 @@ typedef const char* X509Certificate;
 typedef int t_httpCode;
 
 t_httpCode httpCode = -1;
-
-
-/*
-// Can be deleted, is nore longer needed
-typedef struct
-{
-  char type[10] = "";
-  char value[10] = "";
-  char unit[10] = "";
-}value;
-
-typedef struct
-{
-  char type[10] = "";
-  char value[10] = "";
-  char unit[10] = "";
-}status;
-
-typedef struct
-{
-  char type[10] = "";
-  char value[10] = "";
-  char unit[10] = "";
-}hours;
-
-typedef struct
-{
-  char type[10] = "";
-  char value[10] = "";
-  char unit[10] = "";
-}starts;
-*/
-
 
 
 // https://techcommunity.microsoft.com/t5/azure-storage/azure-storage-tls-critical-changes-are-almost-here-and-why-you/ba-p/2741581
@@ -361,6 +328,7 @@ void GPIOPinISR()
 }
 
 // function forward declarations
+float ReadViessmannApi_01(int pSensorIndex);
 t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t Data_0_Id, const char * p_gateways_0_serial, const char * p_gateways_0_devices_0_id, ViessmannApiSelection * apiSelectionPtr);
 t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, const int equipBufLen, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id);
 t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
@@ -1662,9 +1630,8 @@ void setup()
       delay(500);
     }
   }
-  
+  /*
   httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id, viessmannApiSelectionPtr);
-  
   if (httpCode == t_http_codes::HTTP_CODE_OK)
   {
     Serial.println(F("Features successfully read from Viessmann Cloud")); 
@@ -1679,7 +1646,7 @@ void setup()
       delay(500);
     }
   }
-  
+  */
 }
 
 void loop()
@@ -1721,6 +1688,9 @@ void loop()
 
       // In the last 15 sec of each day we set a pulse to Off-State when we had On-State before
       bool isLast15SecondsOfDay = (localTime.hour() == 23 && localTime.minute() == 59 &&  localTime.second() > 45) ? true : false;
+      
+      float testValue = ReadViessmannApi_01(0);
+     // viesmAnalogdataCont01.SetNewValue(0, dateTimeUTCNow, ReadViessmannApi_01(0));
       
       // Get readings from 4 differend analog sensors and store the values in a container     
        
@@ -2218,6 +2188,39 @@ String floToStr(float value)
   return String(buf);
 }
 
+float ReadViessmannApi_01(int pSensorIndex)
+{
+  // Use values read from the Viessmann API
+  // Change the function for each sensor to your needs
+  double theRead = MAGIC_NUMBER_INVALID;
+  if ((viessmannApiSelection.lastReadTime.operator+(viessmannApiSelection.readInterval)).operator<(dateTimeUTCNow))
+  {
+    Serial.println("Going to read from API");
+    httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id, viessmannApiSelectionPtr);
+    if (httpCode == t_http_codes::HTTP_CODE_OK)
+    {
+      viessmannApiSelection.lastReadTime = dateTimeUTCNow;
+      Serial.println(F("Features successfully read from Viessmann Cloud")); 
+    }
+    else
+    {
+      viessmannApiSelection.lastReadTime = dateTimeUTCNow;
+      Serial.println(F("Failed to read Features from Viessmann Cloud")); 
+      Serial.println((char*)bufferStorePtr);
+    }
+    
+  }
+  else
+  {
+    
+    
+      delay(1000);
+      Serial.println("Not to read");
+    
+  }
+  return 20.0;
+}
+
 float ReadAnalogSensor(int pSensorIndex)
 {
 #ifndef USE_SIMULATED_SENSORVALUES
@@ -2480,7 +2483,7 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
   memset(bufferStorePtr, '\0', bufferStoreLength);
   ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
   
-  t_httpCode responseCode = viessmannClient.GetFeatures(data_0_id, Gateways_0_Serial, Gateways_0_Devices_0_Id, apiSelectionPtr);
+  t_httpCode responseCode = viessmannClient.GetFeatures(bufferStorePtr, bufferStoreLength, data_0_id, Gateways_0_Serial, Gateways_0_Devices_0_Id, apiSelectionPtr);
   Serial.printf("\r\nFeatures httpResponseCode is: %d\r\n", responseCode);
   if (responseCode == t_http_codes::HTTP_CODE_OK)
       {
@@ -2489,6 +2492,7 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
         
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_3_temperature_main.name, apiSelectionPtr ->_3_temperature_main.value);       
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_5_boiler_temperature.name, apiSelectionPtr ->_5_boiler_temperature.value);       
+        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_7_burner_modulation.name, apiSelectionPtr ->_7_burner_modulation.value);       
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_8_burner_hours.name, apiSelectionPtr ->_8_burner_hours.value);
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_8_burner_starts.name, apiSelectionPtr ->_8_burner_starts.value);
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_9_burner_is_active.name, apiSelectionPtr ->_9_burner_is_active.value);
@@ -2502,6 +2506,7 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_92_heating_dhw_outlet_temperature.name, apiSelectionPtr ->_92_heating_dhw_outlet_temperature.value);
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_93_heating_dhw_main_temperature.name, apiSelectionPtr ->_93_heating_dhw_main_temperature.value);
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_95_heating_temperature_outside.name, apiSelectionPtr ->_95_heating_temperature_outside.value);
+        
         #endif
          
 

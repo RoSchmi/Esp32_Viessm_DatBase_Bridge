@@ -18,18 +18,20 @@ class ViessmannApiSelection
     DateTime  lastReadTime;
     TimeSpan readInterval;
     
-    typedef struct
+    typedef struct Feature
     {     
         char name[FEATURENAMELENGTH] = {0};
         char timestamp[FEATURESTAMPLENGTH] = {0};     
         char value[FEATUREVALUELENGTH] = {0};       
     }Feature;
     
+    ViessmannApiSelection();
     ViessmannApiSelection(DateTime pLastReadTime, TimeSpan pReadInterval);
     ~ViessmannApiSelection();
 
     Feature _3_temperature_main;
     Feature _5_boiler_temperature;
+    Feature _7_burner_modulation;
     Feature _8_burner_hours;
     Feature _8_burner_starts;
     Feature _9_burner_is_active;
@@ -44,7 +46,7 @@ class ViessmannApiSelection
     Feature _92_heating_dhw_outlet_temperature;
     Feature _93_heating_dhw_main_temperature;
     Feature _95_heating_temperature_outside;
-    
+     
 };
 
 #endif

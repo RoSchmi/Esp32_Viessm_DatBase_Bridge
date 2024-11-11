@@ -5,7 +5,6 @@ ViessmannApiSelection::ViessmannApiSelection(DateTime pLastReadTime, TimeSpan pR
 {
     readInterval = pReadInterval;
     lastReadTime = pLastReadTime;
-
 }
 
 /**
