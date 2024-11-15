@@ -101,77 +101,96 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
             int nameLen = apiSelectionPtr ->nameLenght;
             int stampLen = apiSelectionPtr -> stampLength;
             int valLen = apiSelectionPtr -> valueLength;
-       
+            
+            //apiSelectionPtr -> _3_temperature_main = tempFeature = {1, "", "", ""};
+            
             // From the long Features JSON string get the selected entities
         
             // Here we write in a temporary feature object and copy the
             // object, but writing directly to the members seems to work as well
             // see the following features
+            tempFeature.idx = 3;
             strncpy(tempFeature.name, doc["data"][3]["feature"], nameLen - 1);
             strncpy(tempFeature.timestamp, doc["data"][3]["timestamp"], stampLen - 1);
             snprintf(tempFeature.value, valLen - 1, "%.1f", (float)doc["data"][3]["properties"]["value"]["value"]);
             apiSelectionPtr -> _3_temperature_main = tempFeature;
         
+            apiSelectionPtr -> _5_boiler_temperature.idx = 5;
             strncpy(apiSelectionPtr -> _5_boiler_temperature.name, doc["data"][5]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _5_boiler_temperature.timestamp, doc["data"][5]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _5_boiler_temperature.value, valLen - 1, "%.1f", (float)doc["data"][5]["properties"]["value"]["value"]);
         
+            apiSelectionPtr -> _7_burner_modulation.idx = 7;
             strncpy(apiSelectionPtr -> _7_burner_modulation.name, doc["data"][7]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _7_burner_modulation.timestamp, doc["data"][7]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _7_burner_modulation.value, valLen - 1, "%.0f", (float)doc["data"][7]["properties"]["value"]["value"]);
-        
+            
+            apiSelectionPtr -> _8_burner_hours.idx = 8;
             strncpy(apiSelectionPtr -> _8_burner_hours.name, doc["data"][8]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _8_burner_hours.timestamp, doc["data"][8]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _8_burner_hours.value, valLen - 1, "%.2f", (float)doc["data"][8]["properties"]["hours"]["value"]);
         
+            apiSelectionPtr -> _8_burner_starts.idx = 8;
             strncpy(apiSelectionPtr -> _8_burner_starts.name, doc["data"][8]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _8_burner_starts.timestamp, doc["data"][8]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _8_burner_starts.value, valLen - 1, "%.0f", (float)doc["data"][8]["properties"]["starts"]["value"]);
-        
+            
+            apiSelectionPtr -> _9_burner_is_active.idx = 9;
             strncpy(apiSelectionPtr -> _9_burner_is_active.name, doc["data"][9]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _9_burner_is_active.timestamp, doc["data"][9]["timestamp"], stampLen - 1);
             strcpy(apiSelectionPtr -> _9_burner_is_active.value, (boolean)doc["data"][9]["properties"]["active"]["value"] ? "true" : "false");
-        
+            
+            apiSelectionPtr -> _11_circulation_pump_status.idx = 11;
             strncpy(apiSelectionPtr -> _11_circulation_pump_status.name, doc["data"][11]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr -> _11_circulation_pump_status.timestamp, doc["data"][11]["timestamp"], stampLen - 1);
             strncpy(apiSelectionPtr -> _11_circulation_pump_status.value, doc["data"][11]["properties"]["status"]["value"], valLen -1);
         
+            apiSelectionPtr -> _23_heating_curve_shift.idx = 23;
             strncpy(apiSelectionPtr -> _23_heating_curve_shift.name, doc["data"][23]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _23_heating_curve_shift.timestamp, doc["data"][23]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _23_heating_curve_shift.value, valLen - 1, "%.1f", (float)doc["data"][23]["properties"]["shift"]["value"]);
         
+            apiSelectionPtr -> _23_heating_curve_slope.idx = 23;
             strncpy(apiSelectionPtr -> _23_heating_curve_slope.name, doc["data"][23]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _23_heating_curve_slope.timestamp, doc["data"][23]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _23_heating_curve_slope.value, valLen - 1, "%.1f", (float)doc["data"][23]["properties"]["slope"]["value"]);
         
+            apiSelectionPtr -> _77_temperature_supply.idx = 77;
             strncpy(apiSelectionPtr -> _77_temperature_supply.name, doc["data"][77]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _77_temperature_supply.timestamp, doc["data"][77]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _77_temperature_supply.value, valLen - 1, "%.1f", (float)doc["data"][77]["properties"]["value"]["value"]);
         
+            apiSelectionPtr -> _85_heating_dhw_charging.idx = 85;
             strncpy(apiSelectionPtr -> _85_heating_dhw_charging.name, doc["data"][85]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _85_heating_dhw_charging.timestamp, doc["data"][85]["timestamp"], stampLen - 1);
             strcpy(apiSelectionPtr -> _85_heating_dhw_charging.value, (boolean)doc["data"][85]["properties"]["active"]["value"] ? "true" : "false");
         
+            apiSelectionPtr -> _86_heating_dhw_pump_status.idx = 86;
             strncpy(apiSelectionPtr -> _86_heating_dhw_pump_status.name, doc["data"][86]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr -> _86_heating_dhw_pump_status.timestamp, doc["data"][86]["timestamp"], stampLen - 1);
             strncpy(apiSelectionPtr -> _86_heating_dhw_pump_status.value, doc["data"][86]["properties"]["status"]["value"], valLen -1);
         
+            apiSelectionPtr -> _88_heating_dhw_pump_primary_status.idx = 88;
             strncpy(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.name, doc["data"][88]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.timestamp, doc["data"][88]["timestamp"], stampLen - 1);
             strncpy(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.value, doc["data"][88]["properties"]["status"]["value"], valLen -1);
         
+            apiSelectionPtr -> _90_heating_dhw_cylinder_temperature.idx = 90;
             strncpy(apiSelectionPtr -> _90_heating_dhw_cylinder_temperature.name, doc["data"][90]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _90_heating_dhw_cylinder_temperature.timestamp, doc["data"][90]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _90_heating_dhw_cylinder_temperature.value, valLen - 1, "%.1f", (float)doc["data"][90]["properties"]["value"]["value"]);
         
+            apiSelectionPtr -> _92_heating_dhw_outlet_temperature.idx = 92;
             strncpy(apiSelectionPtr -> _92_heating_dhw_outlet_temperature.name, doc["data"][92]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _92_heating_dhw_outlet_temperature.timestamp, doc["data"][92]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _92_heating_dhw_outlet_temperature.value, valLen - 1, "%.1f", (float)doc["data"][92]["properties"]["value"]["value"]);
         
+            apiSelectionPtr -> _93_heating_dhw_main_temperature.idx = 93;
             strncpy(apiSelectionPtr -> _93_heating_dhw_main_temperature.name, doc["data"][93]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _93_heating_dhw_main_temperature.timestamp, doc["data"][93]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _93_heating_dhw_main_temperature.value, valLen - 1, "%.1f", (float)doc["data"][93]["properties"]["value"]["value"]);
         
+            apiSelectionPtr -> _95_heating_temperature_outside.idx = 95;
             strncpy(apiSelectionPtr -> _95_heating_temperature_outside.name, doc["data"][95]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _95_heating_temperature_outside.timestamp, doc["data"][95]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _95_heating_temperature_outside.value, valLen - 1, "%.1f", (float)doc["data"][95]["properties"]["value"]["value"]);   

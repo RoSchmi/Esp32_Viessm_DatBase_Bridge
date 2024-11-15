@@ -61,6 +61,7 @@
 // the passwort is "My" + the SSID-Name, e.g. MyESP32_xxxxxx.
  
 #include <Arduino.h>
+#include <vector>
 #include <time.h>
 #include "ESPAsyncWebServer.h"
 #include "defines.h"
@@ -156,6 +157,9 @@ char Data_0_Address_HouseNumber[equipBufLen] = {0};
 char Gateways_0_Serial[equipBufLen] = {0};
 char Gateways_0_Devices_0_Id[equipBufLen] = {0};
 
+#define FEATURES_COUNT 16
+ViessmannApiSelection::Feature features[FEATURES_COUNT];
+
 //void * StackPtrAtStart;
 //void * StackPtrEnd;
 UBaseType_t * StackPtrAtStart;
@@ -233,6 +237,8 @@ DataContainerWio dataContainer(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INV
 DataContainerWio viesmAnalogdataCont01(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INVALIDATEINTERVAL_MINUTES % 60, 0), (float)MIN_DATAVALUE, (float)MAX_DATAVALUE, (float)MAGIC_NUMBER_INVALID);
 
 AnalogSensorMgr analogSensorMgr(MAGIC_NUMBER_INVALID);
+
+AnalogSensorMgr analogSensorMgr_Api_01(MAGIC_NUMBER_INVALID);
 
 OnOffDataContainerWio onOffDataContainer;
 
@@ -328,7 +334,7 @@ void GPIOPinISR()
 }
 
 // function forward declarations
-float ReadViessmannApi_01(int pSensorIndex);
+ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, const char * pSensorName);
 t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t Data_0_Id, const char * p_gateways_0_serial, const char * p_gateways_0_devices_0_id, ViessmannApiSelection * apiSelectionPtr);
 t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, const int equipBufLen, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id);
 t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
@@ -1595,6 +1601,8 @@ void setup()
   Serial.println("");
 
   analogSensorMgr.SetReadInterval(ANALOG_SENSOR_READ_INTERVAL_SECONDS);
+
+  analogSensorMgr_Api_01.SetReadInterval(API_ANALOG_SENSOR_READ_INTERVAL_SECONDS);
   
   
   httpCode = readUserFromApi(myX509Certificate, myViessmannApiAccountPtr);
@@ -1689,21 +1697,48 @@ void loop()
       // In the last 15 sec of each day we set a pulse to Off-State when we had On-State before
       bool isLast15SecondsOfDay = (localTime.hour() == 23 && localTime.minute() == 59 &&  localTime.second() > 45) ? true : false;
       
-      float testValue = ReadViessmannApi_01(0);
-     // viesmAnalogdataCont01.SetNewValue(0, dateTimeUTCNow, ReadViessmannApi_01(0));
+     /*
+     viesmAnalogdataCont01.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value));
+     viesmAnalogdataCont01.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value));
+     viesmAnalogdataCont01.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value));
+     viesmAnalogdataCont01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));
+     
+     SampleValueSet tempSampleValueSet;
+     tempSampleValueSet  = viesmAnalogdataCont01.getSampleValues(dateTimeUTCNow);
+     
+     float temperature_0 = tempSampleValueSet.SampleValues[0].Value;
+     float temperature_1 = tempSampleValueSet.SampleValues[1].Value;
+     float temperature_2 = tempSampleValueSet.SampleValues[2].Value;
+     float temperature_3 = tempSampleValueSet.SampleValues[3].Value;
+
+     Serial.printf(" Outside Temperature is: %.2f\r\n", tempSampleValueSet.SampleValues[0].Value);
+     Serial.printf(" Main Temperature is: %.2f\r\n", temperature_1);
+     Serial.printf(" Cylinder Temperature is: %.2f\r\n", temperature_2);
+     Serial.printf(" Outlet Temperature is: %.2f\r\n", temperature_3);
+     */
+     
+
+     
       
       // Get readings from 4 differend analog sensors and store the values in a container     
-       
+     
+     
+     dataContainer.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value));
+     dataContainer.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value));
+     dataContainer.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value));
+     dataContainer.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));
+     
+
+      /*
       dataContainer.SetNewValue(0, dateTimeUTCNow, ReadAnalogSensor(0));
       dataContainer.SetNewValue(1, dateTimeUTCNow, ReadAnalogSensor(1));
       dataContainer.SetNewValue(2, dateTimeUTCNow, ReadAnalogSensor(2));
       dataContainer.SetNewValue(3, dateTimeUTCNow, ReadAnalogSensor(3));
-
-     // viesmAnalogdataCont01.SetNewValue(0, dateTimeUTCNow, ReadAnalogSensor(0));
-
+      */
+     
       
 
-      // Check if automatic OnOfSwitcher has toggled (used to simulate on/off changes)
+      // Check if automatic OnOffSwitcher has toggled (used to simulate on/off changes)
       // and accordingly change the state of one representation (here index 0 and 1) in onOffDataContainer
       if (onOffSwitcherWio.hasToggled(dateTimeUTCNow))
       {
@@ -2188,19 +2223,24 @@ String floToStr(float value)
   return String(buf);
 }
 
-float ReadViessmannApi_01(int pSensorIndex)
+ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, const char* pSensorName)
 {
   // Use values read from the Viessmann API
-  // Change the function for each sensor to your needs
-  double theRead = MAGIC_NUMBER_INVALID;
+  // pSensorIndex determins the position (from 4). pSensorName is the name of the feature (see ViessmannApiSelection.h)
+  ViessmannApiSelection::Feature returnFeature;// = ViessmannApiSelection::featureEmpty;
+  
+  strncpy(returnFeature.value, (floToStr(MAGIC_NUMBER_INVALID)).c_str(), sizeof(returnFeature.value) - 1);
+  
+  //double theRead = MAGIC_NUMBER_INVALID;
   if ((viessmannApiSelection.lastReadTime.operator+(viessmannApiSelection.readInterval)).operator<(dateTimeUTCNow))
   {
-    Serial.println("Going to read from API");
+    //Serial.println("Going to read from API");
     httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id, viessmannApiSelectionPtr);
     if (httpCode == t_http_codes::HTTP_CODE_OK)
     {
       viessmannApiSelection.lastReadTime = dateTimeUTCNow;
-      Serial.println(F("Features successfully read from Viessmann Cloud")); 
+      Serial.println(F("Features successfully read from Viessmann Cloud"));
+      
     }
     else
     {
@@ -2208,17 +2248,31 @@ float ReadViessmannApi_01(int pSensorIndex)
       Serial.println(F("Failed to read Features from Viessmann Cloud")); 
       Serial.println((char*)bufferStorePtr);
     }
-    
+
   }
   else
   {
-    
-    
       delay(1000);
       Serial.println("Not to read");
-    
   }
-  return 20.0;
+
+  if (analogSensorMgr_Api_01.HasToBeRead(pSensorIndex, dateTimeUTCNow))
+      {
+        for (int i = 0; i < FEATURES_COUNT; i++)
+        {
+          
+          if (strcmp((const char *)features[i].name, pSensorName) == 0)
+          {
+            returnFeature = features[i];
+            analogSensorMgr_Api_01.SetReadTimeAndValues(pSensorIndex, dateTimeUTCNow, atof(returnFeature.value), 0.0f, MAGIC_NUMBER_INVALID);
+            Serial.printf("Set ReadTime and values %d    %s\r\n", pSensorIndex, (const char *)features[i].name);
+          //Serial.printf("%d    %s\r\n", i, pSensorName);
+            break;
+          }
+        } 
+     }
+    
+  return returnFeature;
 }
 
 float ReadAnalogSensor(int pSensorIndex)
@@ -2487,7 +2541,46 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
   Serial.printf("\r\nFeatures httpResponseCode is: %d\r\n", responseCode);
   if (responseCode == t_http_codes::HTTP_CODE_OK)
       {
+        features[0] = apiSelectionPtr ->_3_temperature_main;
+        strcpy(features[0].name, (const char *)"_3_temperature_main");
+        features[1] = apiSelectionPtr ->_5_boiler_temperature;
+        strcpy(features[1].name, (const char *)"_5_boiler_temperature");
+        features[2] = apiSelectionPtr ->_7_burner_modulation;
+        strcpy(features[2].name, (const char *)"_7_burner_modulation");
+        features[3] = apiSelectionPtr ->_8_burner_hours;
+        strcpy(features[3].name, (const char *)"_8_burner_hours");
+        features[4] = apiSelectionPtr ->_8_burner_starts;
+        strcpy(features[4].name, (const char *)"_8_burner_starts");
+        features[5] = apiSelectionPtr ->_9_burner_is_active;
+        strcpy(features[5].name, (const char *)"_9_burner_is_active");
+        features[6] = apiSelectionPtr ->_23_heating_curve_shift;
+        strcpy(features[6].name, (const char *)"_23_heating_curve_shift");
+        features[7] = apiSelectionPtr ->_23_heating_curve_slope;
+        strcpy(features[7].name, (const char *)"_23_heating_curve_slope");
+        features[8] = apiSelectionPtr ->_77_temperature_supply;
+        strcpy(features[8].name, (const char *)"_77_temperature_supply");
+        features[9] = apiSelectionPtr ->_85_heating_dhw_charging;
+        strcpy(features[9].name, (const char *)"_85_heating_dhw_charging");
+        features[10] = apiSelectionPtr ->_86_heating_dhw_pump_status;
+        strcpy(features[10].name, (const char *)"_86_heating_dhw_pump_status");
+        features[11] = apiSelectionPtr ->_88_heating_dhw_pump_primary_status;
+        strcpy(features[11].name, (const char *)"_88_heating_dhw_pump_primary_status");
+        features[12] = apiSelectionPtr ->_90_heating_dhw_cylinder_temperature;
+        strcpy(features[12].name, (const char *)"_90_heating_dhw_cylinder_temperature");
+        features[13] = apiSelectionPtr ->_92_heating_dhw_outlet_temperature;
+        strcpy(features[13].name, (const char *)"_92_heating_dhw_outlet_temperature");
+        features[14] = apiSelectionPtr ->_93_heating_dhw_main_temperature;
+        strcpy(features[14].name, (const char *)"_93_heating_dhw_main_temperature");
+        features[15] = apiSelectionPtr ->_95_heating_temperature_outside;
+        strcpy(features[15].name, (const char *)"_95_heating_temperature_outside");
+
+        for (int i = 0; i < FEATURES_COUNT; i++)
+        {
+          Serial.printf("%s    %s\r\n", features[i].name, features[i].value);
+        }
+
         #if SERIAL_PRINT == 1
+        /*
         Serial.println(F("Print values from Api-Selection:"));
         
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_3_temperature_main.name, apiSelectionPtr ->_3_temperature_main.value);       
@@ -2506,7 +2599,7 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_92_heating_dhw_outlet_temperature.name, apiSelectionPtr ->_92_heating_dhw_outlet_temperature.value);
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_93_heating_dhw_main_temperature.name, apiSelectionPtr ->_93_heating_dhw_main_temperature.value);
         Serial.printf("%s    %s\r\n", apiSelectionPtr ->_95_heating_temperature_outside.name, apiSelectionPtr ->_95_heating_temperature_outside.value);
-        
+        */
         #endif
          
 
