@@ -89,7 +89,7 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
     { 
         if (httpResponseCode == HTTP_CODE_OK)
         {
-            Serial.println("Received ResponsCode > 0"); 
+            //Serial.println("Received ResponsCode > 0"); 
             JsonDocument doc;
             StaticJsonDocument<64> filter;
             filter["data"][0]["feature"] = true,
@@ -102,11 +102,10 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
             int stampLen = apiSelectionPtr -> stampLength;
             int valLen = apiSelectionPtr -> valueLength;
             
-            //apiSelectionPtr -> _3_temperature_main = tempFeature = {1, "", "", ""};
             
             // From the long Features JSON string get the selected entities
         
-            // Here we write in a temporary feature object and copy the
+            // in the first 'block' we write in a temporary feature object and copy the
             // object, but writing directly to the members seems to work as well
             // see the following features
             tempFeature.idx = 3;

@@ -181,6 +181,7 @@ uint8_t lastResetCause = 0;
 bool buttonPressed = false;
 
 const char analogTableName[45] = ANALOG_TABLENAME;
+const char viessmAnalogTableName_01[45] = VIESSMANN_ANALOG_TABLENAME_01;
 
 const char OnOffTableName_1[45] = ON_OFF_TABLENAME_01;
 const char OnOffTableName_2[45] = ON_OFF_TABLENAME_02;
@@ -234,7 +235,7 @@ int sendIntervalSeconds = (SENDINTERVAL_MINUTES * 60) < 1 ? 1 : (SENDINTERVAL_MI
 
 DataContainerWio dataContainer(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INVALIDATEINTERVAL_MINUTES % 60, 0), (float)MIN_DATAVALUE, (float)MAX_DATAVALUE, (float)MAGIC_NUMBER_INVALID);
 
-DataContainerWio viesmAnalogdataCont01(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INVALIDATEINTERVAL_MINUTES % 60, 0), (float)MIN_DATAVALUE, (float)MAX_DATAVALUE, (float)MAGIC_NUMBER_INVALID);
+DataContainerWio viessmAnalogdataCont01(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INVALIDATEINTERVAL_MINUTES % 60, 0), (float)MIN_DATAVALUE, (float)MAX_DATAVALUE, (float)MAGIC_NUMBER_INVALID);
 
 AnalogSensorMgr analogSensorMgr(MAGIC_NUMBER_INVALID);
 
@@ -271,6 +272,8 @@ uint32_t soundSwitcherReadDelayTime = SOUNDSWITCHER_READ_DELAYTIME;
 
 uint64_t loopCounter = 0;
 int insertCounterAnalogTable = 0;
+int insertCounterApiAnalogTable01 = 0;
+
 uint32_t tryUploadCounter = 0;
 uint32_t failedUploadCounter = 0;
 uint32_t timeNtpUpdateCounter = 0;
@@ -1638,6 +1641,7 @@ void setup()
       delay(500);
     }
   }
+
   /*
   httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id, viessmannApiSelectionPtr);
   if (httpCode == t_http_codes::HTTP_CODE_OK)
@@ -1697,14 +1701,17 @@ void loop()
       // In the last 15 sec of each day we set a pulse to Off-State when we had On-State before
       bool isLast15SecondsOfDay = (localTime.hour() == 23 && localTime.minute() == 59 &&  localTime.second() > 45) ? true : false;
       
-     /*
-     viesmAnalogdataCont01.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value));
-     viesmAnalogdataCont01.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value));
-     viesmAnalogdataCont01.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value));
-     viesmAnalogdataCont01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));
      
+     viessmAnalogdataCont01.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value));
+     viessmAnalogdataCont01.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value));
+     viessmAnalogdataCont01.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value));
+     viessmAnalogdataCont01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));
+     
+
+
+     /*
      SampleValueSet tempSampleValueSet;
-     tempSampleValueSet  = viesmAnalogdataCont01.getSampleValues(dateTimeUTCNow);
+     tempSampleValueSet  = viessmAnalogdataCont01.getSampleValues(dateTimeUTCNow);
      
      float temperature_0 = tempSampleValueSet.SampleValues[0].Value;
      float temperature_1 = tempSampleValueSet.SampleValues[1].Value;
@@ -1722,19 +1729,19 @@ void loop()
       
       // Get readings from 4 differend analog sensors and store the values in a container     
      
-     
+     /*
      dataContainer.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value));
      dataContainer.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value));
      dataContainer.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value));
      dataContainer.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));
-     
+     */
 
-      /*
+      
       dataContainer.SetNewValue(0, dateTimeUTCNow, ReadAnalogSensor(0));
       dataContainer.SetNewValue(1, dateTimeUTCNow, ReadAnalogSensor(1));
       dataContainer.SetNewValue(2, dateTimeUTCNow, ReadAnalogSensor(2));
       dataContainer.SetNewValue(3, dateTimeUTCNow, ReadAnalogSensor(3));
-      */
+      
      
       
 
@@ -1746,7 +1753,19 @@ void loop()
         onOffDataContainer.SetNewOnOffValue(2, state, dateTimeUTCNow, timeZoneOffsetUTC);
         onOffDataContainer.SetNewOnOffValue(3, !state, dateTimeUTCNow, timeZoneOffsetUTC);    
       }
+        // RoSchmi
+        /*
+        if (feedResult.isValid)
+        {
+          Serial.println(F("Feedresult is valid"));
+        }
         
+
+        if (feedResult.analogToSend)
+        {
+          Serial.println(F("feedresult.analogToSend == true"));
+        }
+        */
         
         if (feedResult.isValid && (feedResult.hasToggled || feedResult.analogToSend))
         {
@@ -1769,7 +1788,7 @@ void loop()
         }
         
       // Check if something is to do: send analog data ? send On/Off-Data ? Handle EndOfDay stuff ?
-      if (dataContainer.hasToBeSent() || onOffDataContainer.One_hasToBeBeSent(localTime) || isLast15SecondsOfDay)
+      if (viessmAnalogdataCont01.hasToBeSent() || dataContainer.hasToBeSent() || onOffDataContainer.One_hasToBeBeSent(localTime) || isLast15SecondsOfDay)
       {    
         //Create some buffer
         char sampleTime[25] {0};    // Buffer to hold sampletime        
@@ -1786,7 +1805,82 @@ void loop()
         char rowKeySpan[25] {0};
         size_t rowKeyLength = 0;
         az_span rowKey = AZ_SPAN_FROM_BUFFER(rowKeySpan);
+        
+        
+        if (viessmAnalogdataCont01.hasToBeSent())       // have to send analog values ?
+        {
+          // Retrieve edited sample values from container
+          SampleValueSet sampleValueSet = viessmAnalogdataCont01.getCheckedSampleValues(dateTimeUTCNow);
+                  
+          createSampleTime(sampleValueSet.LastUpdateTime, timeZoneOffsetUTC, (char *)sampleTime);
+          // Define name of the table (arbitrary name + actual year, like: AnalogTestValues2020)
+          String augmentedAnalogTableName = viessmAnalogTableName_01; 
+          if (augmentTableNameWithYear)
+          {
+            // RoSchmi changed 10.07.2024 to resolve issue 1         
+            //augmentedAnalogTableName += (dateTimeUTCNow.year());
+            augmentedAnalogTableName += (localTime.year());  
+          }
 
+          // Create Azure Storage Table if table doesn't exist
+          if (localTime.year() != viessmAnalogdataCont01.Year)    // if new year
+          {  
+            az_http_status_code theResult = createTable(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedAnalogTableName.c_str());
+                     
+            if ((theResult == AZ_HTTP_STATUS_CODE_CONFLICT) || (theResult == AZ_HTTP_STATUS_CODE_CREATED))
+            {
+              viessmAnalogdataCont01.Set_Year(localTime.year());                   
+            }
+            else
+            {
+              // Reset board if not successful
+             
+             //SCB_AIRCR = 0x05FA0004;             
+            }                     
+          }   
+
+          // Create an Array of (here) 5 Properties
+          // Each Property consists of the Name, the Value and the Type (here only Edm.String is supported)
+
+          // Besides PartitionKey and RowKey we have 5 properties to be stored in a table row
+          // (SampleTime and 4 samplevalues)
+          size_t analogPropertyCount = 5;
+          EntityProperty AnalogPropertiesArray[5];
+          AnalogPropertiesArray[0] = (EntityProperty)TableEntityProperty((char *)"SampleTime", (char *) sampleTime, (char *)"Edm.String");
+          AnalogPropertiesArray[1] = (EntityProperty)TableEntityProperty((char *)"T_1", (char *)floToStr(sampleValueSet.SampleValues[0].Value).c_str(), (char *)"Edm.String");
+          AnalogPropertiesArray[2] = (EntityProperty)TableEntityProperty((char *)"T_2", (char *)floToStr(sampleValueSet.SampleValues[1].Value).c_str(), (char *)"Edm.String");
+          AnalogPropertiesArray[3] = (EntityProperty)TableEntityProperty((char *)"T_3", (char *)floToStr(sampleValueSet.SampleValues[2].Value).c_str(), (char *)"Edm.String");
+          AnalogPropertiesArray[4] = (EntityProperty)TableEntityProperty((char *)"T_4", (char *)floToStr(sampleValueSet.SampleValues[3].Value).c_str(), (char *)"Edm.String");
+          
+          // Create the PartitionKey (special format)
+          makePartitionKey(analogTablePartPrefix, augmentPartitionKey, localTime, partitionKey, &partitionKeyLength);
+          partitionKey = az_span_slice(partitionKey, 0, partitionKeyLength);
+
+          // Create the RowKey (special format)        
+          makeRowKey(localTime, rowKey, &rowKeyLength);
+          
+          rowKey = az_span_slice(rowKey, 0, rowKeyLength);
+  
+          // Create TableEntity consisting of PartitionKey, RowKey and the properties named 'SampleTime', 'T_1', 'T_2', 'T_3' and 'T_4'
+          AnalogTableEntity analogTableEntity(partitionKey, rowKey, az_span_create_from_str((char *)sampleTime),  AnalogPropertiesArray, analogPropertyCount);
+          
+          #if SERIAL_PRINT == 1
+            Serial.printf("Trying to insert %u \r\n", insertCounterApiAnalogTable01);
+            Serial.printf("Analog Table Name: %s \r\n", (const char *)augmentedAnalogTableName.c_str()); 
+          #
+          #endif  
+             
+          // Keep track of tries to insert and check for memory leak
+          insertCounterApiAnalogTable01++;
+
+          // RoSchmi, Todo: event. include code to check for memory leaks here
+
+          // Store Entity to Azure Cloud   
+          __unused az_http_status_code insertResult =  insertTableEntity(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedAnalogTableName.c_str(), analogTableEntity, (char *)EtagBuffer);
+              
+
+        } 
+        
         if (dataContainer.hasToBeSent())       // have to send analog values ?
         {    
           // Retrieve edited sample values from container
@@ -1846,6 +1940,7 @@ void loop()
           
           #if SERIAL_PRINT == 1
             Serial.printf("Trying to insert %u \r\n", insertCounterAnalogTable);
+            Serial.printf("Analog Table Name: %s \r\n", (const char *)augmentedAnalogTableName.c_str()); 
           #endif  
              
           // Keep track of tries to insert and check for memory leak
@@ -1944,7 +2039,8 @@ void loop()
           
               onOffValueSet.OnOffSampleValues[i].insertCounter++;
               
-              
+              // RoSchmi 
+              Serial.printf("OnOff Table Name: %s \r\n", (const char *)augmentedOnOffTableName.c_str());
               // Store Entity to Azure Cloud   
              __unused az_http_status_code insertResult =  insertTableEntity(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedOnOffTableName.c_str(), onOffTableEntity, (char *)EtagBuffer);
               
@@ -2029,8 +2125,7 @@ uint8_t connectMultiWiFi()
       //RoSchmi added 20.07.2024 
       LOGERROR3(F("In connectMultiWiFi() * Additional SSID neglected = "), WM_config.WiFi_Creds[i].wifi_ssid, F(", PW = "), WM_config.WiFi_Creds[i].wifi_pw );
     }
-      // RoSchmi removed curly brace in next line and added at another place
-  //  }
+      
 
   LOGERROR(F("Connecting MultiWifi..."));
 
@@ -2073,7 +2168,6 @@ uint8_t connectMultiWiFi()
 #endif  
   }
 
-  // RoSchmi added closing curly brace in next line
   }
 
   return status;
@@ -2231,16 +2325,16 @@ ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, cons
   
   strncpy(returnFeature.value, (floToStr(MAGIC_NUMBER_INVALID)).c_str(), sizeof(returnFeature.value) - 1);
   
-  //double theRead = MAGIC_NUMBER_INVALID;
+  // Only read features from the cloud when readInterval has expired
   if ((viessmannApiSelection.lastReadTime.operator+(viessmannApiSelection.readInterval)).operator<(dateTimeUTCNow))
   {
+    // RoSchmi
     //Serial.println("Going to read from API");
     httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id, viessmannApiSelectionPtr);
     if (httpCode == t_http_codes::HTTP_CODE_OK)
     {
       viessmannApiSelection.lastReadTime = dateTimeUTCNow;
       Serial.println(F("Features successfully read from Viessmann Cloud"));
-      
     }
     else
     {
@@ -2248,14 +2342,8 @@ ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, cons
       Serial.println(F("Failed to read Features from Viessmann Cloud")); 
       Serial.println((char*)bufferStorePtr);
     }
-
   }
-  else
-  {
-      delay(1000);
-      Serial.println("Not to read");
-  }
-
+  
   if (analogSensorMgr_Api_01.HasToBeRead(pSensorIndex, dateTimeUTCNow))
       {
         for (int i = 0; i < FEATURES_COUNT; i++)
@@ -2265,8 +2353,9 @@ ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, cons
           {
             returnFeature = features[i];
             analogSensorMgr_Api_01.SetReadTimeAndValues(pSensorIndex, dateTimeUTCNow, atof(returnFeature.value), 0.0f, MAGIC_NUMBER_INVALID);
-            Serial.printf("Set ReadTime and values %d    %s\r\n", pSensorIndex, (const char *)features[i].name);
-          //Serial.printf("%d    %s\r\n", i, pSensorName);
+            // RoSchmi
+            // Serial.printf("Set ReadTime and values %d    %s\r\n", pSensorIndex, (const char *)features[i].name);
+            //Serial.printf("%d    %s\r\n", i, pSensorName);
             break;
           }
         } 
@@ -2283,8 +2372,12 @@ float ReadAnalogSensor(int pSensorIndex)
 
             double theRead = MAGIC_NUMBER_INVALID;
 
+            // RoSchmi
+            //  Serial.printf("Before has to be read. Index %d\r\n", pSensorIndex); 
             if (analogSensorMgr.HasToBeRead(pSensorIndex, dateTimeUTCNow))
-            {                     
+            { 
+              // RoSchmi
+              // Serial.println("analogSensorMgr has to be read");                   
               switch (pSensorIndex)
               {
                 case 0:
@@ -2324,8 +2417,12 @@ float ReadAnalogSensor(int pSensorIndex)
                         // Here we look if the sound sensor was updated in this loop
                         // If yes, we can get the average value from the index 0 sensor
                         AnalogSensor tempSensor = analogSensorMgr.GetSensorDates(0);
+                        // RoSchmi
+                        // Serial.println("Test time");
                         if (tempSensor.LastReadTime.operator==(dateTimeUTCNow))
                         {
+                          // RoSchmi
+                          // Serial.println("Condition met");
                           analogSensorMgr.SetReadTimeAndValues(pSensorIndex, dateTimeUTCNow, soundValues[1], soundValues[0], MAGIC_NUMBER_INVALID);
                           theRead = feedResult.avValue / 10;
                           // is limited to be not more than 100
@@ -2540,117 +2637,52 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
   t_httpCode responseCode = viessmannClient.GetFeatures(bufferStorePtr, bufferStoreLength, data_0_id, Gateways_0_Serial, Gateways_0_Devices_0_Id, apiSelectionPtr);
   Serial.printf("\r\nFeatures httpResponseCode is: %d\r\n", responseCode);
   if (responseCode == t_http_codes::HTTP_CODE_OK)
-      {
-        features[0] = apiSelectionPtr ->_3_temperature_main;
-        strcpy(features[0].name, (const char *)"_3_temperature_main");
-        features[1] = apiSelectionPtr ->_5_boiler_temperature;
-        strcpy(features[1].name, (const char *)"_5_boiler_temperature");
-        features[2] = apiSelectionPtr ->_7_burner_modulation;
-        strcpy(features[2].name, (const char *)"_7_burner_modulation");
-        features[3] = apiSelectionPtr ->_8_burner_hours;
-        strcpy(features[3].name, (const char *)"_8_burner_hours");
-        features[4] = apiSelectionPtr ->_8_burner_starts;
-        strcpy(features[4].name, (const char *)"_8_burner_starts");
-        features[5] = apiSelectionPtr ->_9_burner_is_active;
-        strcpy(features[5].name, (const char *)"_9_burner_is_active");
-        features[6] = apiSelectionPtr ->_23_heating_curve_shift;
-        strcpy(features[6].name, (const char *)"_23_heating_curve_shift");
-        features[7] = apiSelectionPtr ->_23_heating_curve_slope;
-        strcpy(features[7].name, (const char *)"_23_heating_curve_slope");
-        features[8] = apiSelectionPtr ->_77_temperature_supply;
-        strcpy(features[8].name, (const char *)"_77_temperature_supply");
-        features[9] = apiSelectionPtr ->_85_heating_dhw_charging;
-        strcpy(features[9].name, (const char *)"_85_heating_dhw_charging");
-        features[10] = apiSelectionPtr ->_86_heating_dhw_pump_status;
-        strcpy(features[10].name, (const char *)"_86_heating_dhw_pump_status");
-        features[11] = apiSelectionPtr ->_88_heating_dhw_pump_primary_status;
-        strcpy(features[11].name, (const char *)"_88_heating_dhw_pump_primary_status");
-        features[12] = apiSelectionPtr ->_90_heating_dhw_cylinder_temperature;
-        strcpy(features[12].name, (const char *)"_90_heating_dhw_cylinder_temperature");
-        features[13] = apiSelectionPtr ->_92_heating_dhw_outlet_temperature;
-        strcpy(features[13].name, (const char *)"_92_heating_dhw_outlet_temperature");
-        features[14] = apiSelectionPtr ->_93_heating_dhw_main_temperature;
-        strcpy(features[14].name, (const char *)"_93_heating_dhw_main_temperature");
-        features[15] = apiSelectionPtr ->_95_heating_temperature_outside;
-        strcpy(features[15].name, (const char *)"_95_heating_temperature_outside");
-
-        for (int i = 0; i < FEATURES_COUNT; i++)
-        {
+  {
+    // Populate features array and replace the name read from Api
+    // with the name used in this Application
+    features[0] = apiSelectionPtr ->_3_temperature_main;
+    strcpy(features[0].name, (const char *)"_3_temperature_main");
+    features[1] = apiSelectionPtr ->_5_boiler_temperature;
+    strcpy(features[1].name, (const char *)"_5_boiler_temperature");
+    features[2] = apiSelectionPtr ->_7_burner_modulation;
+    strcpy(features[2].name, (const char *)"_7_burner_modulation");
+    features[3] = apiSelectionPtr ->_8_burner_hours;
+    strcpy(features[3].name, (const char *)"_8_burner_hours");
+    features[4] = apiSelectionPtr ->_8_burner_starts;
+    strcpy(features[4].name, (const char *)"_8_burner_starts");
+    features[5] = apiSelectionPtr ->_9_burner_is_active;
+    strcpy(features[5].name, (const char *)"_9_burner_is_active");
+    features[6] = apiSelectionPtr ->_23_heating_curve_shift;
+    strcpy(features[6].name, (const char *)"_23_heating_curve_shift");
+    features[7] = apiSelectionPtr ->_23_heating_curve_slope;
+    strcpy(features[7].name, (const char *)"_23_heating_curve_slope");
+    features[8] = apiSelectionPtr ->_77_temperature_supply;
+    strcpy(features[8].name, (const char *)"_77_temperature_supply");
+    features[9] = apiSelectionPtr ->_85_heating_dhw_charging;
+    strcpy(features[9].name, (const char *)"_85_heating_dhw_charging");
+    features[10] = apiSelectionPtr ->_86_heating_dhw_pump_status;
+    strcpy(features[10].name, (const char *)"_86_heating_dhw_pump_status");
+    features[11] = apiSelectionPtr ->_88_heating_dhw_pump_primary_status;
+    strcpy(features[11].name, (const char *)"_88_heating_dhw_pump_primary_status");
+    features[12] = apiSelectionPtr ->_90_heating_dhw_cylinder_temperature;
+    strcpy(features[12].name, (const char *)"_90_heating_dhw_cylinder_temperature");
+    features[13] = apiSelectionPtr ->_92_heating_dhw_outlet_temperature;
+    strcpy(features[13].name, (const char *)"_92_heating_dhw_outlet_temperature");
+    features[14] = apiSelectionPtr ->_93_heating_dhw_main_temperature;
+    strcpy(features[14].name, (const char *)"_93_heating_dhw_main_temperature");
+    features[15] = apiSelectionPtr ->_95_heating_temperature_outside;
+    strcpy(features[15].name, (const char *)"_95_heating_temperature_outside");
+        
+    /*
+    // Print out the array of features
+    for (int i = 0; i < FEATURES_COUNT; i++)
+    {
           Serial.printf("%s    %s\r\n", features[i].name, features[i].value);
-        }
-
-        #if SERIAL_PRINT == 1
-        /*
-        Serial.println(F("Print values from Api-Selection:"));
-        
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_3_temperature_main.name, apiSelectionPtr ->_3_temperature_main.value);       
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_5_boiler_temperature.name, apiSelectionPtr ->_5_boiler_temperature.value);       
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_7_burner_modulation.name, apiSelectionPtr ->_7_burner_modulation.value);       
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_8_burner_hours.name, apiSelectionPtr ->_8_burner_hours.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_8_burner_starts.name, apiSelectionPtr ->_8_burner_starts.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_9_burner_is_active.name, apiSelectionPtr ->_9_burner_is_active.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_23_heating_curve_shift.name, apiSelectionPtr ->_23_heating_curve_shift.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_23_heating_curve_slope.name, apiSelectionPtr ->_23_heating_curve_slope.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_77_temperature_supply.name, apiSelectionPtr ->_77_temperature_supply.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_85_heating_dhw_charging.name, apiSelectionPtr ->_85_heating_dhw_charging.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_86_heating_dhw_pump_status.name, apiSelectionPtr ->_86_heating_dhw_pump_status.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_88_heating_dhw_pump_primary_status.name, apiSelectionPtr ->_88_heating_dhw_pump_primary_status.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_90_heating_dhw_cylinder_temperature.name, apiSelectionPtr ->_90_heating_dhw_cylinder_temperature.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_92_heating_dhw_outlet_temperature.name, apiSelectionPtr ->_92_heating_dhw_outlet_temperature.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_93_heating_dhw_main_temperature.name, apiSelectionPtr ->_93_heating_dhw_main_temperature.value);
-        Serial.printf("%s    %s\r\n", apiSelectionPtr ->_95_heating_temperature_outside.name, apiSelectionPtr ->_95_heating_temperature_outside.value);
-        */
-        #endif
-         
-
-        /*
-        Serial.println(apiSelection._5_Boiler_temperature.name);
-        Serial.println(apiSelection._5_Boiler_temperature.timestamp);
-        Serial.println(apiSelection._5_Boiler_temperature.value);
-        */
-
-        /*
-        const char* json = (char *)bufferStorePtr;
-        JsonDocument doc;
-        deserializeJson(doc, json);
-        const char * tempOutside = doc["data"][95]["properties"]["value"]["unit"];
-        */
-        //Serial.println("Temperature outside");
-        //Serial.printf("\r\n%s\r\n", tempOutside);
-        
-        //Serial.println((char *)bufferStorePtr);
-
-        
-
-        /*
-        uint32_t data_0_id = doc["data"][0]["id"];
-        const char * data_0_description = doc["data"][0]["description"];
-        const char * data_0_address_street = doc["data"][0]["address"]["street"];
-        const char * data_0_address_houseNumber = doc["data"][0]["address"]["houseNumber"];
-        const char * gateways_0_serial = doc["data"][0]["gateways"][0]["serial"];
-        const char * gateways_0_devices_0_id = doc["data"][0]["gateways"][0]["devices"][0]["id"];
-        */
-
-       // *p_data_0_id = data_0_id;
-       // memset(bufferStorePtr, '\0', bufferStoreLength);
-        /*
-        memset(p_data_0_description, '\0', equipBufLen);
-        memset(p_data_0_address_street, '\0', equipBufLen);
-        memset(p_data_0_address_houseNumber,'\0', equipBufLen);
-
-        memset(p_gateways_0_serial,'\0', equipBufLen);
-        memset(p_gateways_0_devices_0_id,'\0', equipBufLen);
-
-        strncpy(p_data_0_description, data_0_description, equipBufLen - 1);
-        strncpy(p_data_0_address_street, data_0_address_street, equipBufLen - 1);
-        strncpy(p_data_0_address_houseNumber, data_0_address_houseNumber, equipBufLen - 1);
-
-        strncpy(p_gateways_0_serial, gateways_0_serial, equipBufLen - 1);
-        strncpy(p_gateways_0_devices_0_id, gateways_0_devices_0_id, equipBufLen - 1);
-        */       
-      }
-
-  //responseCode = t_http_codes::HTTP_CODE_OK;
+    }
+    */
+    ;
+  
+  }
   return responseCode;
 }
 

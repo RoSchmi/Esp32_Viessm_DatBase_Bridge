@@ -37,7 +37,7 @@ private const string iotBaseUri = "https://api.viessmann.com/iot/v1/";
 
 #define USED_MICROPHONE 0        // 0 = SPH0645LM4H, 1 = INMP441
 
-#define SOUNDSWITCHER_THRESHOLD "220"       // The arbitrary sound Threshold to toggle High/Low
+#define SOUNDSWITCHER_THRESHOLD "200"       // The arbitrary sound Threshold to toggle High/Low
                                             // (Can be changed in WiFi-Manager)
 #define SOUNDSWITCHER_UPDATEINTERVAL 400    // Interval in ms for reading sound level
 #define SOUNDSWITCHER_READ_DELAYTIME 4000   // Delay in ms from switch to displayed value
@@ -62,7 +62,9 @@ private const string iotBaseUri = "https://api.viessmann.com/iot/v1/";
 // regular expression "^[A-Za-z][A-Za-z0-9]{2,62}$".
 // max length in this App is 45
 
-#define ANALOG_TABLENAME "AnalogValuesX"          // Name of the Azure Table to store 4 analog Values max length = 45
+#define ANALOG_TABLENAME "AnalogValuesX"                   // Name of the Azure Table to store 4 analog Values max length = 45
+
+#define VIESSMANN_ANALOG_TABLENAME_01 "ApiAnalog01ValuesX" // Name of the Azure Table to store 4 analog Values max length = 45
 
 #define ANALOG_TABLE_PART_PREFIX "Y2_"            // Prefix for PartitionKey of Analog Tables (default, no need to change)
 

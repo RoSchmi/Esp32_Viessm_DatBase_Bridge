@@ -1,7 +1,7 @@
 #include "AnalogSensorMgr.h"
 
  
- AnalogSensor readValues[SENSOR_COUNT];
+ //AnalogSensor readValues[SENSOR_COUNT];
  float MagicNumberInvalid = 999.9;
 
 
@@ -28,12 +28,16 @@ void AnalogSensorMgr::SetReadInterval(int sensorIndex, uint32_t pInterval)
 
 bool AnalogSensorMgr::HasToBeRead(int pSensorIndex, DateTime now)
 {
+    //RoSchmi
+    //Serial.println("Ask");
+    
     if (readValues[pSensorIndex].IsActive && now.operator>=(readValues[pSensorIndex].LastReadTime.operator+(readValues[pSensorIndex].ReadInterval)))
     {
         return true;
     }
     else
     {
+        //Serial.println("Ret false");
         return false;
     }    
 }
