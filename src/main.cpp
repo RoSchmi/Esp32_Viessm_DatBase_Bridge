@@ -97,6 +97,7 @@
 #include "SoundSwitcher.h"
 #include "ImuManagerWio.h"
 #include "AnalogSensorMgr.h"
+#include "OnOffSensor.h"
 
 #include "azure/core/az_platform.h"
 #include "azure/core/az_http.h"
@@ -117,7 +118,7 @@
 
 //SET_LOOP_TASK_STACK_SIZE ( 16*1024 ); // 16KB
 
-SET_LOOP_TASK_STACK_SIZE ( 32*1024 ); // 20KB
+SET_LOOP_TASK_STACK_SIZE ( 32*1024 ); // 32KB
 
 // Allocate memory space in memory segment .dram0.bss, ptr to this memory space is later
 // passed to TableClient (is used there as the place for some buffers to preserve stack )
@@ -159,6 +160,12 @@ char Gateways_0_Devices_0_Id[equipBufLen] = {0};
 
 #define FEATURES_COUNT 16
 ViessmannApiSelection::Feature features[FEATURES_COUNT];
+
+#define IS_ACTIVE true
+OnOffSensor OnOffBurnerStatus(IS_ACTIVE);
+OnOffSensor OnOffCirculationPumpStatus(IS_ACTIVE);
+OnOffSensor OnOffHotWaterCircualtionPumpStatus(IS_ACTIVE);
+OnOffSensor OnOffHotWaterPrimaryPumpStatus(IS_ACTIVE);
 
 //void * StackPtrAtStart;
 //void * StackPtrEnd;
@@ -1708,24 +1715,6 @@ void loop()
      viessmAnalogdataCont01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));
      
 
-
-     /*
-     SampleValueSet tempSampleValueSet;
-     tempSampleValueSet  = viessmAnalogdataCont01.getSampleValues(dateTimeUTCNow);
-     
-     float temperature_0 = tempSampleValueSet.SampleValues[0].Value;
-     float temperature_1 = tempSampleValueSet.SampleValues[1].Value;
-     float temperature_2 = tempSampleValueSet.SampleValues[2].Value;
-     float temperature_3 = tempSampleValueSet.SampleValues[3].Value;
-
-     Serial.printf(" Outside Temperature is: %.2f\r\n", tempSampleValueSet.SampleValues[0].Value);
-     Serial.printf(" Main Temperature is: %.2f\r\n", temperature_1);
-     Serial.printf(" Cylinder Temperature is: %.2f\r\n", temperature_2);
-     Serial.printf(" Outlet Temperature is: %.2f\r\n", temperature_3);
-     */
-     
-
-     
       
       // Get readings from 4 differend analog sensors and store the values in a container     
      
@@ -1736,56 +1725,61 @@ void loop()
      dataContainer.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));
      */
 
-      
       dataContainer.SetNewValue(0, dateTimeUTCNow, ReadAnalogSensor(0));
       dataContainer.SetNewValue(1, dateTimeUTCNow, ReadAnalogSensor(1));
       dataContainer.SetNewValue(2, dateTimeUTCNow, ReadAnalogSensor(2));
       dataContainer.SetNewValue(3, dateTimeUTCNow, ReadAnalogSensor(3));
       
-     
-      
-
       // Check if automatic OnOffSwitcher has toggled (used to simulate on/off changes)
-      // and accordingly change the state of one representation (here index 0 and 1) in onOffDataContainer
+      // and accordingly change the state of one representation (here index 2 and 3) in onOffDataContainer
       if (onOffSwitcherWio.hasToggled(dateTimeUTCNow))
       {
         bool state = onOffSwitcherWio.GetState();
-        onOffDataContainer.SetNewOnOffValue(2, state, dateTimeUTCNow, timeZoneOffsetUTC);
+        //onOffDataContainer.SetNewOnOffValue(2, state, dateTimeUTCNow, timeZoneOffsetUTC);
         onOffDataContainer.SetNewOnOffValue(3, !state, dateTimeUTCNow, timeZoneOffsetUTC);    
       }
-        // RoSchmi
-        /*
-        if (feedResult.isValid)
-        {
-          Serial.println(F("Feedresult is valid"));
-        }
-        
 
-        if (feedResult.analogToSend)
-        {
-          Serial.println(F("feedresult.analogToSend == true"));
-        }
-        */
-        
-        if (feedResult.isValid && (feedResult.hasToggled || feedResult.analogToSend))
-        {
-            if (feedResult.hasToggled)
-            {
-              onOffDataContainer.SetNewOnOffValue(0, feedResult.state, dateTimeUTCNow, timeZoneOffsetUTC);
-              Serial.print("\r\nHas toggled, new state is: ");
-              Serial.println(feedResult.state == true ? "High" : "Low");
-              Serial.println();
-            }
-            // if toogled activate make hasToBeSent flag
-            // so that the analog values have to be updated in the cloud
-            if (feedResult.analogToSend)
-            {
-              dataContainer.setHasToBeSentFlag();
-              Serial.print("Average is: ");
-              Serial.println(feedResult.avValue);             
-              Serial.println();
-            }           
-        }
+      if (OnOffBurnerStatus.HasChangedState())
+      {
+        // RoSchmi
+        Serial.println("Burner has changed state-------");
+        onOffDataContainer.SetNewOnOffValue(0, OnOffBurnerStatus.GetStateResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
+      }
+      if (OnOffCirculationPumpStatus.HasChangedState())
+      {
+        onOffDataContainer.SetNewOnOffValue(1, OnOffCirculationPumpStatus.GetStateResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
+      }
+      if (OnOffHotWaterCircualtionPumpStatus.HasChangedState())
+      {
+        onOffDataContainer.SetNewOnOffValue(2, OnOffHotWaterCircualtionPumpStatus.GetStateResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
+      }
+      if (OnOffHotWaterPrimaryPumpStatus.HasChangedState())
+      {
+        //onOffDataContainer.SetNewOnOffValue(3, OnOffHotWaterPrimaryPumpStatus.GetStateResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
+      }
+      
+      /*
+      // This is for Burner Sound Sensor (not used here)    
+      if (feedResult.isValid && (feedResult.hasToggled || feedResult.analogToSend))
+      {
+          if (feedResult.hasToggled)
+          {
+            onOffDataContainer.SetNewOnOffValue(0, feedResult.state, dateTimeUTCNow, timeZoneOffsetUTC);
+            Serial.print("\r\nHas toggled, new state is: ");
+            Serial.println(feedResult.state == true ? "High" : "Low");
+            Serial.println();
+          }
+          // if toogled activate make hasToBeSent flag
+          // so that the analog values have to be updated in the cloud
+          if (feedResult.analogToSend)
+          {
+            dataContainer.setHasToBeSentFlag();
+            Serial.print("Average is: ");
+            Serial.println(feedResult.avValue);             
+            Serial.println();
+          }           
+      }
+      */
         
       // Check if something is to do: send analog data ? send On/Off-Data ? Handle EndOfDay stuff ?
       if (viessmAnalogdataCont01.hasToBeSent() || dataContainer.hasToBeSent() || onOffDataContainer.One_hasToBeBeSent(localTime) || isLast15SecondsOfDay)
@@ -2672,7 +2666,12 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
     strcpy(features[14].name, (const char *)"_93_heating_dhw_main_temperature");
     features[15] = apiSelectionPtr ->_95_heating_temperature_outside;
     strcpy(features[15].name, (const char *)"_95_heating_temperature_outside");
-        
+
+    OnOffBurnerStatus.Feed(apiSelectionPtr ->_9_burner_is_active.value, dateTimeUTCNow);
+    OnOffCirculationPumpStatus.Feed(apiSelectionPtr ->_11_circulation_pump_status.value, dateTimeUTCNow);
+    OnOffHotWaterCircualtionPumpStatus.Feed(apiSelectionPtr ->_86_heating_dhw_pump_status.value,dateTimeUTCNow);
+    OnOffHotWaterPrimaryPumpStatus.Feed(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.value, dateTimeUTCNow);
+    
     /*
     // Print out the array of features
     for (int i = 0; i < FEATURES_COUNT; i++)
