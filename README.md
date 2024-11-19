@@ -3,5 +3,3 @@
 This is work in progress, not ready to work with.
 
 Retrieving data from the viessmann-api and storing to Azure Storage Tables is basically working
-
-Retrieving data from the viessmann-api and storing to Azure Storage Tables is basically working
