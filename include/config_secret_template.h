@@ -13,5 +13,9 @@
 #define AZURE_CONFIG_ACCOUNT_KEY        "3M+ssz2Ws6....YourStorageAccountKey.....BOjg+1r7ZA=="
 
 #define VIESSMANN_CLIENT_ID "888888........888888888888"
+
+#define VIESSMANN_REFRESH_TOKEN "004280382eadbe....d4953ffd19d27c"
+
 #define VIESSMANN_ACCESS_TOKEN "very..long..token"
+
 #endif // _CONFIG_SECRET_H
