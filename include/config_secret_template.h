@@ -18,7 +18,4 @@
 
 #define VIESSMANN_ACCESS_TOKEN "very..long..token"
 
-
-
-
 #endif // _CONFIG_SECRET_H
