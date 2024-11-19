@@ -259,8 +259,8 @@ t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const ui
     //_viessmannHttpPtr ->useHTTP10(false);
     _viessmannHttpPtr ->begin(encodedUrl);
     //_viessmannHttpPtr ->addHeader("Authorization", authorizationHeader);
-    _viessmannHttpPtr ->addHeader("Host", "iam.viessmann.com", false, true);
-    _viessmannHttpPtr ->addHeader("ContentType", "application/x-www-form-urlencoded; charset=utf-8");
+    //_viessmannHttpPtr ->addHeader("Host", "iam.viessmann.com", false, true);
+    _viessmannHttpPtr ->addHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
     
 
     //t_httpCode httpResponseCode = _viessmannHttpPtr ->POST(addendum);
