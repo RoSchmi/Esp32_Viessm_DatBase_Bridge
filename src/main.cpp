@@ -131,12 +131,16 @@ uint8_t * bufferStorePtr = &bufferStore[0];
 
 char viessmannClientId[50] = VIESSMANN_CLIENT_ID;
 char viessmannAccessToken[1120] = VIESSMANN_ACCESS_TOKEN;
-char viessmannUserBaseUri[60] = VIESSMANN_USER_Base_URI;
-char viessmannIotBaseUri[60] = VIESSMANN_IOT_Base_URI;
+char viessmannRefreshToken[60] = VIESSMANN_REFRESH_TOKEN;
+char viessmannUserBaseUri[60] = VIESSMANN_USER_BASE_URI;
+char viessmannIotBaseUri[60] = VIESSMANN_IOT_BASE_URI;
+char viessmannTokenBaseUri[60] = VIESSMANN_TOKEN_BASE_URI;
+
+
 
 static bool ViessmannUseHttps_State = VIESSMANN_TRANSPORT_PROTOCOL == 0 ? false : true;
 
-ViessmannApiAccount myViessmannApiAccount(viessmannClientId, viessmannAccessToken, viessmannIotBaseUri, viessmannUserBaseUri, ViessmannUseHttps_State); 
+ViessmannApiAccount myViessmannApiAccount(viessmannClientId, viessmannAccessToken, viessmannIotBaseUri, viessmannUserBaseUri, viessmannTokenBaseUri, ViessmannUseHttps_State); 
 ViessmannApiAccount * myViessmannApiAccountPtr = &myViessmannApiAccount;
 
 ViessmannApiSelection viessmannApiSelection(DateTime(), TimeSpan(VIESSMANN_API_READ_INTERVAL_SECONDS));
@@ -312,8 +316,8 @@ const char * CONFIG_FILE = "/ConfigSW.json";    // Configuration for Azure and t
 /*
 char viessmannClientId[50] = VIESSMANN_CLIENT_ID;
 char viessmannAccessToken[1120] = VIESSMANN_ACCESS_TOKEN;
-char viessmannUserBaseUri[60] = VIESSMANN_USER_Base_URI;
-char viessmannIotBaseUri[60] = VIESSMANN_IOT_Base_URI;
+char viessmannUserBaseUri[60] = VIESSMANN_USER_BASE_URI;
+char viessmannIotBaseUri[60] = VIESSMANN_IOT_BASE_URI;
 */
 
 // Parameter for WiFi-Manager
@@ -345,6 +349,7 @@ void GPIOPinISR()
 
 // function forward declarations
 ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, const char * pSensorName);
+t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, char * refreshToken); 
 t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t Data_0_Id, const char * p_gateways_0_serial, const char * p_gateways_0_devices_0_id, ViessmannApiSelection * apiSelectionPtr);
 t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, const int equipBufLen, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id);
 t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
@@ -1649,6 +1654,24 @@ void setup()
     }
   }
 
+  
+  httpCode = refreshAccessTokenFromApi(myX509Certificate, myViessmannApiAccountPtr, viessmannRefreshToken);
+  if (httpCode == t_http_codes::HTTP_CODE_OK)
+  {
+    Serial.println(F("Could refresh AccessToken successfully read from Viessmann Cloud"));
+    
+  }
+  else
+  {     
+    Serial.println(F("Couldn't refresh accessToken from Viessmann Cloud.\r\nError message is:"));
+    Serial.println((char*)bufferStorePtr);
+    ESP.restart();
+    while(true)
+    {
+      delay(500);
+    }
+  }
+  
   /*
   httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id, viessmannApiSelectionPtr);
   if (httpCode == t_http_codes::HTTP_CODE_OK)
@@ -2776,6 +2799,32 @@ t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myVies
         // viessmannUserId_is_read = true;  // has now another place
       }    
 return responseCode;
+}
+
+t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, char * refreshToken)
+{
+  #if VIESSMANN_TRANSPORT_PROTOCOL == 1
+    static WiFiClientSecure wifi_client;
+  #else
+    static WiFiClient wifi_client;
+  #endif
+
+    #if VIESSMANN_TRANSPORT_PROTOCOL == 1
+    wifi_client.setCACert(myX509Certificate);
+  #endif
+
+  #if WORK_WITH_WATCHDOG == 1
+      esp_task_wdt_reset();
+  #endif
+
+  ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
+   #if SERIAL_PRINT == 1
+        Serial.println(myViessmannApiAccount.ClientId);
+    #endif
+    //memset(viessmannApiUser,'\0', viessmannUserBufLen);
+      memset(bufferStorePtr,'\0', bufferStoreLength);
+      t_httpCode responseCode = viessmannClient.RefreshAccessToken(bufferStorePtr, bufferStoreLength, refreshToken);
+      Serial.printf("\r\nUser httpResponseCode is: %d\r\n", responseCode);
 }
 
 az_http_status_code createTable(CloudStorageAccount *pAccountPtr, X509Certificate pCaCert, const char * pTableName)

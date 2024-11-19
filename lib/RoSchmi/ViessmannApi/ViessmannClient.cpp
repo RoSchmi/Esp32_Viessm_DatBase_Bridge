@@ -64,8 +64,6 @@ ViessmannClient::ViessmannClient(ViessmannApiAccount * account, const char * caC
     */
 }
 
-
-
 t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t reponseBufferLength, const uint32_t data_0_id, const char * gateways_0_serial, const char * gateways_0_devices_0_id, ViessmannApiSelection * apiSelectionPtr)
 {
     char InstallationId[20] = {0};
@@ -222,6 +220,75 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
     _viessmannHttpPtr ->useHTTP10(false);
     _viessmannHttpPtr->end();
     return httpResponseCode;
+}
+
+t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const uint16_t reponseBufferLength, const char * refreshToken)
+{
+    //char InstallationId[20] = {0};
+    //sprintf(InstallationId, "%d", data_0_id);
+
+    //char GatewaySerial[30] = {0};
+     
+    //String addendum = "grant_type=refresh_token&client_id=3969f4604398ee755c2d12c425b3f5a7&refresh_token=d81a4fae4cad160535d91cb7ea0d7a7a";
+
+    String content = "grant_type=refresh_token&client_id=" + (String)_viessmannAccountPtr ->ClientId + "&refresh_token=" + (String)refreshToken; 
+    //String content = "grant_type=refresh_token&client_id=" + (String)_viessmannAccountPtr ->ClientId; 
+    //String content = "grant_type=refresh_token&client_id=" + (String)_viessmannAccountPtr ->ClientId; 
+    
+    //String content = "grant_type=refresh_token&client_id=3969f4604398ee755c2d12c425b3f5a7&refresh_token=2d9f273706610bb848d7632d40cf3433";
+    
+    //String content = "grant_type=refresh_token&refresh_token=a30a1c1b95ebbf5b71f75091184f6aa8&client_id=3969f4604398ee755c2d12c425b3f5a7";
+    //String content = "";
+
+
+    //a30a1c1b95ebbf5b71f75091184f6aa8
+    //String encodedUrl = _viessmannAccountPtr -> UriEndPointToken + addendum;
+    
+    String encodedUrl = _viessmannAccountPtr -> UriEndPointToken;
+
+   encodedUrl = "https://iam.viessmann.com/idp/v3/token";
+    
+    //encodedUrl = "http://google.de";
+
+    //String encodedUrl = _viessmannAccountPtr -> UriEndPointToken + "token?" + addendum;
+    //"equipment/installations" + "?includeGateways=true"; 
+    String authorizationHeader = "Bearer " + _viessmannAccountPtr ->AccessToken;
+    Serial.println(encodedUrl);
+    Serial.println(content);
+    //_viessmannHttpPtr ->begin(encodedUrl);
+    //_viessmannHttpPtr ->useHTTP10(false);
+    _viessmannHttpPtr ->begin(encodedUrl);
+    //_viessmannHttpPtr ->addHeader("Authorization", authorizationHeader);
+    _viessmannHttpPtr ->addHeader("Host", "iam.viessmann.com", false, true);
+    _viessmannHttpPtr ->addHeader("ContentType", "application/x-www-form-urlencoded; charset=utf-8");
+    
+
+    //t_httpCode httpResponseCode = _viessmannHttpPtr ->POST(addendum);
+    t_httpCode httpResponseCode =_viessmannHttpPtr ->POST((String)content);
+    if (httpResponseCode > 0) 
+    {
+        Serial.println("Responsecode is > 0");
+        String payload = _viessmannHttpPtr ->getString();
+        Serial.println("Got payload");
+        Serial.println(payload);
+        int charsToCopy = payload.length() < reponseBufferLength ? payload.length() : reponseBufferLength;
+        for (int i = 0; i < charsToCopy; i++)
+        {
+            responseBuffer[i] = payload[i];
+        }               
+    } 
+    else 
+    {
+        Serial.printf("Fehler bei der Anfrage, HTTP-Code: %d\n", httpResponseCode);
+    }
+    _viessmannHttpPtr->end();
+    /*
+    String encodedUrl = _viessmannAccountPtr -> UriEndPointToken + "grant_type=refresh_token" + "?includeGateways=true"; 
+    String authorizationHeader = "Bearer " + _viessmannAccountPtr ->AccessToken;
+    Serial.println(encodedUrl);
+    */
+   //return t_http_codes::HTTP_CODE_OK;
+   return httpResponseCode;
 }
     
 

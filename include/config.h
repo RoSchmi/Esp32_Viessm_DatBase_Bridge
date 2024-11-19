@@ -19,9 +19,12 @@
 // Define other settings according to your needs
 
 
-#define VIESSMANN_USER_Base_URI  "api.viessmann.com/users/v1/users/me";
+#define VIESSMANN_USER_BASE_URI  "api.viessmann.com/users/v1/users/me";
 
-#define VIESSMANN_IOT_Base_URI "api.viessmann.com/iot/v1/";
+#define VIESSMANN_IOT_BASE_URI "api.viessmann.com/iot/v1/";
+
+//#define VIESSMANN_TOKEN_BASE_URI "iam.viessmann.com/idp/v3/token";
+#define VIESSMANN_TOKEN_BASE_URI "iam.viessmann.com/idp/v3/";
 
 /*
 private const string authorizeBaseUri = "https://iam.viessmann.com/idp/v3/authorize";

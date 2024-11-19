@@ -12,17 +12,19 @@ class ViessmannApiAccount
 {
 public:
     ViessmannApiAccount();
-    ViessmannApiAccount(String clientId, String accessToken, String apiIot, String apiUser, bool useHttps);
+    ViessmannApiAccount(String clientId, String accessToken, String apiIot, String apiUser, String apiToken, bool useHttps);
     ~ViessmannApiAccount();
 
-    void ChangeAccountParams(String clientId, String accessToken, String apiIot, String apiUser, bool useHttps);
+    void ChangeAccountParams(String clientId, String accessToken, String apiIot, String apiUser, String apiToken, bool useHttps);
     
     String ClientId;
     String AccessToken;
     String ApiIotUrl;
     String ApiUserUrl;
+    String ApiTokenUrl;
     String UriEndPointIot;
     String UriEndPointUser;
+    String UriEndPointToken;
 
     /*
     String AccountName;
@@ -32,4 +34,4 @@ public:
     */
 };
 
-#endif  // _CLOUDSTORAGEACCOUNT_H_
+#endif  // _VIESSMANNAPIACCOUNT_H_
