@@ -23,18 +23,8 @@
 
 #define VIESSMANN_IOT_BASE_URI "api.viessmann.com/iot/v1/";
 
-//#define VIESSMANN_TOKEN_BASE_URI "iam.viessmann.com/idp/v3/token";
-#define VIESSMANN_TOKEN_BASE_URI "iam.viessmann.com/idp/v3/";
+#define VIESSMANN_TOKEN_BASE_URI "iam.viessmann.com/idp/v3/token";
 
-/*
-private const string authorizeBaseUri = "https://iam.viessmann.com/idp/v3/authorize";
-private const string tokenBaseUri = "https://iam.viessmann.com/idp/v3/token";
-
-private const string userBaseUri = "https://api.viessmann.com/users/v1/users/me";
-
-private const string iotBaseUri = "https://api.viessmann.com/iot/v1/";
-*/
-//
 // The credentials of your WiFi router and the name and key of your
 // Azure Storage Account are set throug WiFi-Manager
 
