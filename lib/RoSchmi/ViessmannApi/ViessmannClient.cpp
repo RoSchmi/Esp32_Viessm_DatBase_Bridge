@@ -215,7 +215,7 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
     } 
     else 
     {
-        Serial.printf("Fehler bei der Anfrage, HTTP-Code: %d\n", httpResponseCode);
+        Serial.printf("Error performing the request, HTTP-Code: %d\n", httpResponseCode);
     }
     _viessmannHttpPtr ->useHTTP10(false);
     _viessmannHttpPtr->end();
@@ -251,7 +251,7 @@ t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const ui
     } 
     else 
     {
-        Serial.printf("Error perfrming the request, HTTP-Code: %d\n", httpResponseCode);
+        Serial.printf("Error performing the request, HTTP-Code: %d\n", httpResponseCode);
     }
     _viessmannHttpPtr->end();
     
@@ -278,7 +278,7 @@ t_httpCode ViessmannClient::GetEquipment(uint8_t* responseBuffer, const uint16_t
     } 
     else 
     {
-        Serial.printf("Fehler bei der Anfrage, HTTP-Code: %d\n", httpResponseCode);
+        Serial.printf("Error performing the request, HTTP-Code: %d\n", httpResponseCode);
     }
     _viessmannHttpPtr->end();
     return httpResponseCode;

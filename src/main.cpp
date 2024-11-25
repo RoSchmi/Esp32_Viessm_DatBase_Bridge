@@ -1659,7 +1659,10 @@ void setup()
   if (httpCode == t_http_codes::HTTP_CODE_OK)
   {
     Serial.println(F("Could refresh AccessToken successfully read from Viessmann Cloud"));
-    
+    while(true)
+    {
+      delay(500);
+    }
   }
   else
   {     
@@ -2817,14 +2820,56 @@ t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccoun
       esp_task_wdt_reset();
   #endif
 
+  const char * accessTokenLabel = "access_token";
+  const char * refreshTokenLabel = "refresh_token";
+  const char * tokenTypeLabel = "token_type";
+
   ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
    #if SERIAL_PRINT == 1
         Serial.println(myViessmannApiAccount.ClientId);
     #endif
-    //memset(viessmannApiUser,'\0', viessmannUserBufLen);
+    
       memset(bufferStorePtr,'\0', bufferStoreLength);
       t_httpCode responseCode = viessmannClient.RefreshAccessToken(bufferStorePtr, bufferStoreLength, refreshToken);
       Serial.printf("\r\nUser httpResponseCode is: %d\r\n", responseCode);
+
+      if (responseCode == t_http_codes::HTTP_CODE_OK)
+      {
+         Serial.println(F("Refreshing Accesstoken sucessful"));
+         Serial.printf("%s\n", (char *)bufferStorePtr);
+         char * posAcTok = strnstr((char *)bufferStorePtr, (const char *)"access_token", 50);
+         if (posAcTok != nullptr)
+         {
+          printf("Zeichenfolge 'access_token' gefunden an Position: %ld\n", posAcTok - (char *)bufferStorePtr);
+         }
+         char * posRefrTok = strnstr((char *)bufferStorePtr, (const char *)"refresh_token", 2000);
+         if (posAcTok != nullptr)
+         {
+          printf("Zeichenfolge 'refresh_token' gefunden an Position: %ld\n", posRefrTok - (char *)bufferStorePtr);
+         }
+         char * posTokType = strnstr((char *)bufferStorePtr, (const char *)"token_type", 2000);
+         if (posTokType != nullptr)
+         {
+            printf("Zeichenfolge 'token_type' gefunden an Position: %ld\n", posTokType - (char *)bufferStorePtr);
+         }
+         char * startAcTok = posAcTok + strlen(accessTokenLabel) + 3;
+         char * endAcTok = posRefrTok - 4;
+          
+          size_t acTokenLength = (size_t)endAcTok + 1 - (size_t)startAcTok;
+          Serial.printf("\nTokenlength is: %d\n", acTokenLength); 
+          memcpy(viessmannAccessToken, startAcTok, acTokenLength);
+          viessmannAccessToken[acTokenLength] = '\0';
+          myViessmannApiAccountPtr ->RenewAccessToken(String(viessmannAccessToken));
+          Serial.printf("\r\n%s\r\n", viessmannAccessToken);
+
+      }
+      else
+      {
+
+        Serial.println(F("Refreshing Accesstoken failed!"));
+      }
+   return responseCode;
+      
 }
 
 az_http_status_code createTable(CloudStorageAccount *pAccountPtr, X509Certificate pCaCert, const char * pTableName)

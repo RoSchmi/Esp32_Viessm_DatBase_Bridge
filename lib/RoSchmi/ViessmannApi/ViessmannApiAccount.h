@@ -17,6 +17,8 @@ public:
 
     void ChangeAccountParams(String clientId, String accessToken, String apiIot, String apiUser, String apiToken, bool useHttps);
     
+    void RenewAccessToken(String accessToken);
+
     String ClientId;
     String AccessToken;
     String ApiIotUrl;
