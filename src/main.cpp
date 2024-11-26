@@ -136,7 +136,8 @@ char viessmannUserBaseUri[60] = VIESSMANN_USER_BASE_URI;
 char viessmannIotBaseUri[60] = VIESSMANN_IOT_BASE_URI;
 char viessmannTokenBaseUri[60] = VIESSMANN_TOKEN_BASE_URI;
 
-
+DateTime AccessTokenRefreshTime = DateTime();
+TimeSpan AccessTokenRefreshInterval = TimeSpan(VIESSMANN_TOKEN_REFRESH_INTERVAL_SECONDS);
 
 static bool ViessmannUseHttps_State = VIESSMANN_TRANSPORT_PROTOCOL == 0 ? false : true;
 
@@ -313,13 +314,6 @@ const char * CONFIG_FILE = "/ConfigSW.json";    // Configuration for Azure and t
 
 #define AZURE_CONFIG_ACCOUNT_KEY   "YourStorageAccountKey"
 
-/*
-char viessmannClientId[50] = VIESSMANN_CLIENT_ID;
-char viessmannAccessToken[1120] = VIESSMANN_ACCESS_TOKEN;
-char viessmannUserBaseUri[60] = VIESSMANN_USER_BASE_URI;
-char viessmannIotBaseUri[60] = VIESSMANN_IOT_BASE_URI;
-*/
-
 // Parameter for WiFi-Manager
 char azureAccountName[20] =  AZURE_CONFIG_ACCOUNT_NAME;
 char azureAccountKey[90] =  AZURE_CONFIG_ACCOUNT_KEY;
@@ -337,11 +331,6 @@ bool writeConfigFile();
 CloudStorageAccount myCloudStorageAccount(azureAccountName, azureAccountKey, UseHttps_State);
 CloudStorageAccount * myCloudStorageAccountPtr = &myCloudStorageAccount;
 
-/*
-ViessmannApiAccount myViessmannApiAccount(viessmannClientId, viessmannAccessToken, viessmannIotBaseUri, viessmannUserBaseUri, ViessmannUseHttps_State); 
-ViessmannApiAccount * myViessmannApiAccountPtr = &myViessmannApiAccount;
-*/
-
 void GPIOPinISR()
 {
   buttonPressed = true;
@@ -349,7 +338,7 @@ void GPIOPinISR()
 
 // function forward declarations
 ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, const char * pSensorName);
-t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, char * refreshToken); 
+t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, const char * refreshToken); 
 t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t Data_0_Id, const char * p_gateways_0_serial, const char * p_gateways_0_devices_0_id, ViessmannApiSelection * apiSelectionPtr);
 t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, const int equipBufLen, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id);
 t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr);
@@ -1613,12 +1602,32 @@ void setup()
   Serial.printf("%s %i %02d %02d %02d %02d", (char *)"Local-Time is:", localTime.year(), 
                                         localTime.month() , localTime.day(),
                                         localTime.hour() , localTime.minute());
-  Serial.println("");
+  Serial.println("\n");
 
   analogSensorMgr.SetReadInterval(ANALOG_SENSOR_READ_INTERVAL_SECONDS);
 
   analogSensorMgr_Api_01.SetReadInterval(API_ANALOG_SENSOR_READ_INTERVAL_SECONDS);
   
+  httpCode = refreshAccessTokenFromApi(myX509Certificate, myViessmannApiAccountPtr, viessmannRefreshToken);
+  if (httpCode == t_http_codes::HTTP_CODE_OK)
+  {
+    Serial.printf("%s %i.%02d.%02d %02d:%02d ", (char *)"At: ", localTime.year(), 
+                                        localTime.month() , localTime.day(),
+                                        localTime.hour() , localTime.minute());
+    Serial.println(F("Could refresh AccessToken successfully from Viessmann Cloud"));
+    
+    AccessTokenRefreshTime = dateTimeUTCNow;
+  }
+  else
+  {     
+    Serial.println(F("Couldn't refresh accessToken from Viessmann Cloud. Error message is:"));
+    Serial.println((char*)bufferStorePtr);
+    ESP.restart();
+    while(true)
+    {
+      delay(500);
+    }
+  }
   
   httpCode = readUserFromApi(myX509Certificate, myViessmannApiAccountPtr);
   if (httpCode == t_http_codes::HTTP_CODE_OK)
@@ -1654,45 +1663,10 @@ void setup()
     }
   }
 
-  
-  httpCode = refreshAccessTokenFromApi(myX509Certificate, myViessmannApiAccountPtr, viessmannRefreshToken);
-  if (httpCode == t_http_codes::HTTP_CODE_OK)
-  {
-    Serial.println(F("Could refresh AccessToken successfully read from Viessmann Cloud"));
-    while(true)
-    {
-      delay(500);
-    }
-  }
-  else
-  {     
-    Serial.println(F("Couldn't refresh accessToken from Viessmann Cloud.\r\nError message is:"));
-    Serial.println((char*)bufferStorePtr);
-    ESP.restart();
-    while(true)
-    {
-      delay(500);
-    }
-  }
-  
-  /*
-  httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id, viessmannApiSelectionPtr);
-  if (httpCode == t_http_codes::HTTP_CODE_OK)
-  {
-    Serial.println(F("Features successfully read from Viessmann Cloud")); 
-  }
-  else
-  {     
-    Serial.println(F("Couldn't read Features from Viessmann Cloud.\r\nError message is:"));
-    Serial.println((char*)bufferStorePtr);
-    ESP.restart();
-    while(true)
-    {
-      delay(500);
-    }
-  }
-  */
 }
+  
+  
+
 
 void loop()
 {
@@ -1730,6 +1704,26 @@ void loop()
       int timeZoneOffsetUTC = myTimezone.utcIsDST(dateTimeUTCNow.unixtime()) ? TIMEZONEOFFSET + DSTOFFSET : TIMEZONEOFFSET;
       
       DateTime localTime = myTimezone.toLocal(dateTimeUTCNow.unixtime());
+      
+      if ((AccessTokenRefreshTime.operator+(AccessTokenRefreshInterval)).operator<(dateTimeUTCNow))
+      {
+          httpCode = refreshAccessTokenFromApi(myX509Certificate, myViessmannApiAccountPtr, viessmannRefreshToken);
+          Serial.printf("%s %i.%02d.%02d %02d:%02d ", (char *)"At: ", localTime.year(), 
+                                        localTime.month() , localTime.day(),
+                                        localTime.hour() , localTime.minute());
+          if (httpCode == t_http_codes::HTTP_CODE_OK)
+          {
+            Serial.println("Token Refresh successful");
+            AccessTokenRefreshTime = dateTimeUTCNow;
+
+          }
+          else
+          {
+            Serial.println("Token Refresh failed");
+            //AccessTokenRefreshTime = (dateTimeUTCNow.operator-(AccessTokenRefreshInterval)).operator+(TimeSpan(5));
+            AccessTokenRefreshTime = dateTimeUTCNow.operator-(TimeSpan(300));
+          }
+      }
 
       // In the last 15 sec of each day we set a pulse to Off-State when we had On-State before
       bool isLast15SecondsOfDay = (localTime.hour() == 23 && localTime.minute() == 59 &&  localTime.second() > 45) ? true : false;
@@ -2347,14 +2341,12 @@ ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, cons
   
   // Only read features from the cloud when readInterval has expired
   if ((viessmannApiSelection.lastReadTime.operator+(viessmannApiSelection.readInterval)).operator<(dateTimeUTCNow))
-  {
-    // RoSchmi
-    //Serial.println("Going to read from API");
+  { 
     httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id, viessmannApiSelectionPtr);
     if (httpCode == t_http_codes::HTTP_CODE_OK)
     {
       viessmannApiSelection.lastReadTime = dateTimeUTCNow;
-      Serial.println(F("Features successfully read from Viessmann Cloud"));
+      Serial.println(F("\n"));
     }
     else
     {
@@ -2372,10 +2364,7 @@ ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, cons
           if (strcmp((const char *)features[i].name, pSensorName) == 0)
           {
             returnFeature = features[i];
-            analogSensorMgr_Api_01.SetReadTimeAndValues(pSensorIndex, dateTimeUTCNow, atof(returnFeature.value), 0.0f, MAGIC_NUMBER_INVALID);
-            // RoSchmi
-            // Serial.printf("Set ReadTime and values %d    %s\r\n", pSensorIndex, (const char *)features[i].name);
-            //Serial.printf("%d    %s\r\n", i, pSensorName);
+            analogSensorMgr_Api_01.SetReadTimeAndValues(pSensorIndex, dateTimeUTCNow, atof(returnFeature.value), 0.0f, MAGIC_NUMBER_INVALID);           
             break;
           }
         } 
@@ -2390,14 +2379,9 @@ float ReadAnalogSensor(int pSensorIndex)
             // Use values read from an analog source
             // Change the function for each sensor to your needs
 
-            double theRead = MAGIC_NUMBER_INVALID;
-
-            // RoSchmi
-            //  Serial.printf("Before has to be read. Index %d\r\n", pSensorIndex); 
+            double theRead = MAGIC_NUMBER_INVALID;           
             if (analogSensorMgr.HasToBeRead(pSensorIndex, dateTimeUTCNow))
-            { 
-              // RoSchmi
-              // Serial.println("analogSensorMgr has to be read");                   
+            {                              
               switch (pSensorIndex)
               {
                 case 0:
@@ -2437,12 +2421,9 @@ float ReadAnalogSensor(int pSensorIndex)
                         // Here we look if the sound sensor was updated in this loop
                         // If yes, we can get the average value from the index 0 sensor
                         AnalogSensor tempSensor = analogSensorMgr.GetSensorDates(0);
-                        // RoSchmi
-                        // Serial.println("Test time");
+                        
                         if (tempSensor.LastReadTime.operator==(dateTimeUTCNow))
-                        {
-                          // RoSchmi
-                          // Serial.println("Condition met");
+                        {                         
                           analogSensorMgr.SetReadTimeAndValues(pSensorIndex, dateTimeUTCNow, soundValues[1], soundValues[0], MAGIC_NUMBER_INVALID);
                           theRead = feedResult.avValue / 10;
                           // is limited to be not more than 100
@@ -2467,13 +2448,7 @@ float ReadAnalogSensor(int pSensorIndex)
                 case 3:
                     {
                       // Line for the switch threshold
-                      theRead = atoi((char *)sSwiThresholdStr) / 10; // dummy
-                      /*
-                      if (!viessmannUserId_is_read)
-                      {
-                        readUserFromApi(myX509Certificate, myViessmannApiAccountPtr);
-                      }
-                      */
+                      theRead = atoi((char *)sSwiThresholdStr) / 10; // dummy                     
                     }                   
                     break;
               }
@@ -2655,7 +2630,7 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
   ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
   
   t_httpCode responseCode = viessmannClient.GetFeatures(bufferStorePtr, bufferStoreLength, data_0_id, Gateways_0_Serial, Gateways_0_Devices_0_Id, apiSelectionPtr);
-  Serial.printf("\r\nFeatures httpResponseCode is: %d\r\n", responseCode);
+  Serial.printf("\r\nFeatures: httpResponseCode is: %d\r\n", responseCode);
   if (responseCode == t_http_codes::HTTP_CODE_OK)
   {
     // Populate features array and replace the name read from Api
@@ -2697,18 +2672,46 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
     OnOffCirculationPumpStatus.Feed(apiSelectionPtr ->_11_circulation_pump_status.value, dateTimeUTCNow);
     OnOffHotWaterCircualtionPumpStatus.Feed(apiSelectionPtr ->_86_heating_dhw_pump_status.value,dateTimeUTCNow);
     OnOffHotWaterPrimaryPumpStatus.Feed(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.value, dateTimeUTCNow);
-    
-    /*
-    // Print out the array of features
-    for (int i = 0; i < FEATURES_COUNT; i++)
-    {
-          Serial.printf("%s    %s\r\n", features[i].name, features[i].value);
-    }
-    */
-    ;
-  
+  }
+  else
+  {
+    bufferStorePtr[bufferStoreLength - 1] = '\0';
+    Serial.println((char *)bufferStorePtr);
   }
   return responseCode;
+}
+
+t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr)
+{
+  #if VIESSMANN_TRANSPORT_PROTOCOL == 1
+    static WiFiClientSecure wifi_client;
+  #else
+    static WiFiClient wifi_client;
+  #endif
+
+    #if VIESSMANN_TRANSPORT_PROTOCOL == 1
+    wifi_client.setCACert(myX509Certificate);
+  #endif
+
+  #if WORK_WITH_WATCHDOG == 1
+      esp_task_wdt_reset();
+  #endif
+
+  ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
+   #if SERIAL_PRINT == 1
+        // Serial.println(myViessmannApiAccount.ClientId);
+      #endif
+      memset(viessmannApiUser,'\0', viessmannUserBufLen);
+      memset(bufferStorePtr,'\0', bufferStoreLength);
+      t_httpCode responseCode = viessmannClient.GetUser(bufferStorePtr, bufferStoreLength);
+      Serial.printf("\r\nUser: httpResponseCode is: %d\r\n", responseCode);
+      
+      if (responseCode == t_http_codes::HTTP_CODE_OK)
+      {
+        uint16_t cntToCopy = strlen((char*)bufferStorePtr) < viessmannUserBufLen ? strlen((char*)bufferStorePtr) : viessmannUserBufLen -1;
+        memcpy(viessmannApiUser, bufferStorePtr, cntToCopy);       
+      }    
+return responseCode;
 }
 
 t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t * p_data_0_id, const int equipBufLen, char * p_data_0_description, char * p_data_0_address_street, char * p_data_0_address_houseNumber, char * p_gateways_0_serial, char * p_gateways_0_devices_0_id)
@@ -2729,7 +2732,7 @@ t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * m
   #endif
   ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
    #if SERIAL_PRINT == 1
-        Serial.println(myViessmannApiAccount.ClientId);
+        //Serial.println(myViessmannApiAccount.ClientId);
       #endif
       
       memset(bufferStorePtr, '\0', bufferStoreLength); 
@@ -2770,41 +2773,9 @@ t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * m
   return responseCode; 
 }
 
-t_httpCode readUserFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr)
-{
-  #if VIESSMANN_TRANSPORT_PROTOCOL == 1
-    static WiFiClientSecure wifi_client;
-  #else
-    static WiFiClient wifi_client;
-  #endif
 
-    #if VIESSMANN_TRANSPORT_PROTOCOL == 1
-    wifi_client.setCACert(myX509Certificate);
-  #endif
 
-  #if WORK_WITH_WATCHDOG == 1
-      esp_task_wdt_reset();
-  #endif
-
-  ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
-   #if SERIAL_PRINT == 1
-        Serial.println(myViessmannApiAccount.ClientId);
-      #endif
-      memset(viessmannApiUser,'\0', viessmannUserBufLen);
-      memset(bufferStorePtr,'\0', bufferStoreLength);
-      t_httpCode responseCode = viessmannClient.GetUser(bufferStorePtr, bufferStoreLength);
-      Serial.printf("\r\nUser httpResponseCode is: %d\r\n", responseCode);
-      
-      if (responseCode == t_http_codes::HTTP_CODE_OK)
-      {
-        uint16_t cntToCopy = strlen((char*)bufferStorePtr) < viessmannUserBufLen ? strlen((char*)bufferStorePtr) : viessmannUserBufLen -1;
-        memcpy(viessmannApiUser, bufferStorePtr, cntToCopy);
-        // viessmannUserId_is_read = true;  // has now another place
-      }    
-return responseCode;
-}
-
-t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, char * refreshToken)
+t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, const char * refreshToken)
 {
   #if VIESSMANN_TRANSPORT_PROTOCOL == 1
     static WiFiClientSecure wifi_client;
@@ -2826,47 +2797,54 @@ t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccoun
 
   ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
    #if SERIAL_PRINT == 1
-        Serial.println(myViessmannApiAccount.ClientId);
+        //Serial.println(myViessmannApiAccount.ClientId);
     #endif
     
       memset(bufferStorePtr,'\0', bufferStoreLength);
       t_httpCode responseCode = viessmannClient.RefreshAccessToken(bufferStorePtr, bufferStoreLength, refreshToken);
-      Serial.printf("\r\nUser httpResponseCode is: %d\r\n", responseCode);
-
+      Serial.printf("\r\nTokenrefresh: httpResponseCode is: %d\r\n", responseCode);
+      
       if (responseCode == t_http_codes::HTTP_CODE_OK)
-      {
-         Serial.println(F("Refreshing Accesstoken sucessful"));
-         Serial.printf("%s\n", (char *)bufferStorePtr);
+      {    
+         #if SERIAL_PRINT == 1
+          Serial.printf("%s\n", (char *)bufferStorePtr);
+         #endif
+         bool tokenIsValid = true;
          char * posAcTok = strnstr((char *)bufferStorePtr, (const char *)"access_token", 50);
-         if (posAcTok != nullptr)
-         {
-          printf("Zeichenfolge 'access_token' gefunden an Position: %ld\n", posAcTok - (char *)bufferStorePtr);
-         }
          char * posRefrTok = strnstr((char *)bufferStorePtr, (const char *)"refresh_token", 2000);
-         if (posAcTok != nullptr)
-         {
-          printf("Zeichenfolge 'refresh_token' gefunden an Position: %ld\n", posRefrTok - (char *)bufferStorePtr);
-         }
          char * posTokType = strnstr((char *)bufferStorePtr, (const char *)"token_type", 2000);
-         if (posTokType != nullptr)
-         {
-            printf("Zeichenfolge 'token_type' gefunden an Position: %ld\n", posTokType - (char *)bufferStorePtr);
-         }
-         char * startAcTok = posAcTok + strlen(accessTokenLabel) + 3;
-         char * endAcTok = posRefrTok - 4;
-          
-          size_t acTokenLength = (size_t)endAcTok + 1 - (size_t)startAcTok;
-          Serial.printf("\nTokenlength is: %d\n", acTokenLength); 
-          memcpy(viessmannAccessToken, startAcTok, acTokenLength);
-          viessmannAccessToken[acTokenLength] = '\0';
-          myViessmannApiAccountPtr ->RenewAccessToken(String(viessmannAccessToken));
-          Serial.printf("\r\n%s\r\n", viessmannAccessToken);
 
+         tokenIsValid = posAcTok == nullptr ? false : tokenIsValid;
+         tokenIsValid = posRefrTok == nullptr ? false : tokenIsValid;
+         tokenIsValid = posTokType == nullptr ? false : tokenIsValid;
+         
+         tokenIsValid = (tokenIsValid && (posAcTok < posRefrTok) && (posRefrTok < posTokType)) ? true : false;
+
+         if (tokenIsValid)
+         {
+            char * startAcTok = posAcTok + strlen(accessTokenLabel) + 3;
+            char * endAcTok = posRefrTok - 4;
+            size_t acTokenLength = (size_t)endAcTok + 1 - (size_t)startAcTok;
+            #if SERIAL_PRINT == 1
+                Serial.printf("\nTokenlength is: %d\n", acTokenLength);
+            #endif
+            memcpy(viessmannAccessToken, startAcTok, acTokenLength);
+            viessmannAccessToken[acTokenLength] = '\0';
+            myViessmannApiAccountPtr ->RenewAccessToken(String(viessmannAccessToken));   
+         }
+         else
+         {
+            responseCode = HTTPC_ERROR_SEND_PAYLOAD_FAILED;
+            Serial.println(F("Content error. Refreshing Accesstoken failed!\n"));
+            bufferStorePtr[bufferStoreLength - 1] = '\0';
+            Serial.println((char *)bufferStorePtr);
+         }
       }
       else
-      {
-
-        Serial.println(F("Refreshing Accesstoken failed!"));
+      {  
+        Serial.println(F("Response Error. Refreshing Accesstoken failed!\n"));   
+        bufferStorePtr[bufferStoreLength - 1] = '\0';
+        Serial.println((char *)bufferStorePtr);
       }
    return responseCode;
       

@@ -40,7 +40,7 @@
 #define SENDINTERVAL_MINUTES   1    // Sendinterval in minutes (10 is recommended), in this interval                                        
                                       // data are sent to the Cloud (is limited to be not below 1 second)
 
-#define SERIAL_PRINT 1                     // 1 = yes, 0 = no. Select if Serial.print messages are printed
+#define SERIAL_PRINT 0                     // 1 = yes, 0 = no. Select if Serial.print messages are printed
 
 #define _ESPASYNC_WIFIMGR_LOGLEVEL_  0     // ( 0 - 4) Define EspAsync_WiFiManager Loglevel (Debug Messages)
 
@@ -87,7 +87,9 @@
 
 #define API_ANALOG_SENSOR_READ_INTERVAL_SECONDS 67  // Analog Sensor values from the Viessmann Api (seconds, can be 0)
 
-#define VIESSMANN_API_READ_INTERVAL_SECONDS 65  //Vales from the Viessmann Api are read with this timeinterval                                             
+#define VIESSMANN_API_READ_INTERVAL_SECONDS 65  //Vales from the Viessmann Api are read with this timeinterval
+
+#define VIESSMANN_TOKEN_REFRESH_INTERVAL_SECONDS 60 * 30 // Viessman AccessToken is refreshed using this timeInterval
 
 #define WORK_WITH_WATCHDOG 0              // 1 = yes, 0 = no, Watchdog is used (1) or not used (0)
                                            // should be 1 for normal operation and 0 for testing

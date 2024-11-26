@@ -215,7 +215,7 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
     } 
     else 
     {
-        Serial.printf("Error performing the request, HTTP-Code: %d\n", httpResponseCode);
+        Serial.printf("Features: Error performing the request, HTTP-Code: %d\n", httpResponseCode);
     }
     _viessmannHttpPtr ->useHTTP10(false);
     _viessmannHttpPtr->end();
@@ -229,8 +229,10 @@ t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const ui
 
    //encodedUrl = "https://iam.viessmann.com/idp/v3/token";
     
-    Serial.println(encodedUrl);
-    Serial.println(body);
+    #if SERIAL_PRINT == 1
+        Serial.println(encodedUrl);
+        Serial.println(body);
+    #endif
     
     _viessmannHttpPtr ->begin(encodedUrl);
     
@@ -239,19 +241,29 @@ t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const ui
     t_httpCode httpResponseCode =_viessmannHttpPtr ->POST((String)body);
     if (httpResponseCode > 0) 
     {
-        Serial.println("Responsecode is > 0");
+        
+        Serial.println("Refresh Token: ResponseCode is > 0");
+        
         String payload = _viessmannHttpPtr ->getString();
-        Serial.println("Got payload");
-        Serial.println(payload);
+            
+        #if SERIAL_PRINT == 1
+            Serial.println("Got payload\n");
+            Serial.println(payload);
+        #endif
+
         int charsToCopy = payload.length() < reponseBufferLength ? payload.length() : reponseBufferLength;
         for (int i = 0; i < charsToCopy; i++)
         {
             responseBuffer[i] = payload[i];
-        }               
+        } 
     } 
     else 
     {
-        Serial.printf("Error performing the request, HTTP-Code: %d\n", httpResponseCode);
+        Serial.printf("Refresh token: Error performing the request, HTTP-Code: %d\n", httpResponseCode);
+        if (httpResponseCode == HTTPC_ERROR_CONNECTION_REFUSED)
+        {
+           Serial.println("Viessmann Server: Connection refused");
+        }
     }
     _viessmannHttpPtr->end();
     
@@ -278,7 +290,7 @@ t_httpCode ViessmannClient::GetEquipment(uint8_t* responseBuffer, const uint16_t
     } 
     else 
     {
-        Serial.printf("Error performing the request, HTTP-Code: %d\n", httpResponseCode);
+        Serial.printf("Eqipment: Error performing the request, HTTP-Code: %d\n", httpResponseCode);
     }
     _viessmannHttpPtr->end();
     return httpResponseCode;
