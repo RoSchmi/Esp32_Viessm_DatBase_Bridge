@@ -167,7 +167,7 @@ char Gateways_0_Devices_0_Id[equipBufLen] = {0};
 ViessmannApiSelection::Feature features[FEATURES_COUNT];
 
 #define IS_ACTIVE true
-OnOffSensor OnOffBurnerStatus(IS_ACTIVE);
+OnOffSensor OnOffBurnerStatus(true, false, true, true, DateTime());
 OnOffSensor OnOffCirculationPumpStatus(IS_ACTIVE);
 OnOffSensor OnOffHotWaterCircualtionPumpStatus(IS_ACTIVE);
 OnOffSensor OnOffHotWaterPrimaryPumpStatus(IS_ACTIVE);
@@ -1763,19 +1763,19 @@ void loop()
       {
         // RoSchmi
         Serial.println("Burner has changed state-------");
-        onOffDataContainer.SetNewOnOffValue(0, OnOffBurnerStatus.GetStateResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
+        onOffDataContainer.SetNewOnOffValue(0, OnOffBurnerStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
       }
       if (OnOffCirculationPumpStatus.HasChangedState())
       {
-        onOffDataContainer.SetNewOnOffValue(1, OnOffCirculationPumpStatus.GetStateResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
+        onOffDataContainer.SetNewOnOffValue(1, OnOffCirculationPumpStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
       }
       if (OnOffHotWaterCircualtionPumpStatus.HasChangedState())
       {
-        onOffDataContainer.SetNewOnOffValue(2, OnOffHotWaterCircualtionPumpStatus.GetStateResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
+        onOffDataContainer.SetNewOnOffValue(2, OnOffHotWaterCircualtionPumpStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
       }
       if (OnOffHotWaterPrimaryPumpStatus.HasChangedState())
       {
-        //onOffDataContainer.SetNewOnOffValue(3, OnOffHotWaterPrimaryPumpStatus.GetStateResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
+        //onOffDataContainer.SetNewOnOffValue(3, OnOffHotWaterPrimaryPumpStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
       }
       
       /*
@@ -1968,7 +1968,9 @@ void loop()
         }
         // Now test if Send On/Off values or End of day stuff?
         if (onOffDataContainer.One_hasToBeBeSent(localTime) || isLast15SecondsOfDay)
-        {        
+        {
+          // RoSchmi
+          Serial.println("One On/Off Value has to be sent");        
           OnOffSampleValueSet onOffValueSet = onOffDataContainer.GetOnOffValueSet();
 
           for (int i = 0; i < 4; i++)    // Do for 4 OnOff-Tables  
@@ -2667,8 +2669,12 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
     strcpy(features[14].name, (const char *)"_93_heating_dhw_main_temperature");
     features[15] = apiSelectionPtr ->_95_heating_temperature_outside;
     strcpy(features[15].name, (const char *)"_95_heating_temperature_outside");
-
-    OnOffBurnerStatus.Feed(apiSelectionPtr ->_9_burner_is_active.value, dateTimeUTCNow);
+    
+    //RoSchmi
+    Serial.printf("       Feeding BurnerStatus: %s\n", apiSelectionPtr ->_9_burner_is_active.value); 
+    OnOffBurnerStatus.Feed(strcmp((const char *)(apiSelectionPtr ->_9_burner_is_active.value), (const char *)"true") == 0, dateTimeUTCNow);
+    
+    
     OnOffCirculationPumpStatus.Feed(apiSelectionPtr ->_11_circulation_pump_status.value, dateTimeUTCNow);
     OnOffHotWaterCircualtionPumpStatus.Feed(apiSelectionPtr ->_86_heating_dhw_pump_status.value,dateTimeUTCNow);
     OnOffHotWaterPrimaryPumpStatus.Feed(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.value, dateTimeUTCNow);

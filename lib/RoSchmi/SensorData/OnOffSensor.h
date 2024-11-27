@@ -18,7 +18,7 @@ public:
     bool HasChangedState();
     //bool hasToggled(DateTime actUtcTime);
     bool GetState();
-    bool GetStateResetChangedFlag();
+    bool GetStateAndResetChangedFlag();
 
 private:
     bool actState = false;

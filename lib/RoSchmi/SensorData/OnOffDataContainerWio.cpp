@@ -33,6 +33,13 @@ const char * tableName_2, const char * tableName_3, const char * tableName_4)
 // If we have a new day the 'dayIsLocked' flag is cleared 
 void OnOffDataContainerWio::SetNewOnOffValue(int sensorIndex, bool state, DateTime pTimeUtc, int offsetUtcMinutes)
 {
+    // RoSchmi
+    if (sensorIndex == 0)
+    {
+        Serial.println("Sensor Index 0 got new state");
+    }
+
+
     // change incoming state if inputInverter is active
     bool _state = onOffSampleValueSet.OnOffSampleValues[sensorIndex].inputInverter ? !state : state;
 

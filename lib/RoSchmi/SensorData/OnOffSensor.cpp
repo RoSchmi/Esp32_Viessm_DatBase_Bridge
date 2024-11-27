@@ -2,7 +2,7 @@
 
 OnOffSensor::OnOffSensor(bool pIsActive)
 {
-
+    isActive = pIsActive;
 }
 OnOffSensor::OnOffSensor(bool pActState, bool pLastState, bool pChangedFlag, bool pIsActive,  DateTime pLastSwitchTime)
 { 
@@ -15,8 +15,12 @@ OnOffSensor::OnOffSensor(bool pActState, bool pLastState, bool pChangedFlag, boo
 
 void OnOffSensor:: Feed(bool pNewState, DateTime pDate)
 {
+    //RoSchmi
+    Serial.printf("Feeding. Newstate = %s, ActState = %s \n ", pNewState ? "true" : "false", actState ? "true" : "false");
     if (pNewState != actState)
     {
+        // RoSchmi
+        Serial.println("Setting changedFlag");
         lastState = actState;
         actState = pNewState;
         changedFlag = true;
@@ -27,19 +31,22 @@ void OnOffSensor:: Feed(bool pNewState, DateTime pDate)
 bool OnOffSensor::HasChangedState()
 {
     if (isActive)
-    {
+    {   
         return changedFlag;   
     }
     else
-    {
+    {  
         return false;
     }
 }
 
-bool OnOffSensor::GetStateResetChangedFlag()
+bool OnOffSensor::GetStateAndResetChangedFlag()
 {
 
     changedFlag = false;
+
+    // RoSchmi
+    Serial.println("Changed flag was restted");
     return actState;
 }
 
