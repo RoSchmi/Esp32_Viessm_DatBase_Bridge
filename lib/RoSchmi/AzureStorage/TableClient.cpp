@@ -219,7 +219,7 @@ AcceptType pAcceptType, ResponseType pResponseType, bool useSharedKeyLite)
       
   az_storage_tables_client tabClient;        
   az_storage_tables_client_options options = az_storage_tables_client_options_default();
-                        
+  
   if (az_storage_tables_client_init(
           &tabClient, az_span_create_from_str((char *)Url.c_str()), AZ_CREDENTIAL_ANONYMOUS, &options)
       != AZ_OK)

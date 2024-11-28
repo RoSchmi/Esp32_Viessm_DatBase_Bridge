@@ -42,11 +42,7 @@ bool OnOffSensor::HasChangedState()
 
 bool OnOffSensor::GetStateAndResetChangedFlag()
 {
-
     changedFlag = false;
-
-    // RoSchmi
-    Serial.println("Changed flag was restted");
     return actState;
 }
 

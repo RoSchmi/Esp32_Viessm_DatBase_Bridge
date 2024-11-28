@@ -939,7 +939,7 @@ bool writeConfigFile()
 #if (ARDUINOJSON_VERSION_MAJOR >= 6)
 
   Serial.println(F("Here we could print the additional config parameter written to file"));
-  //serializeJsonPretty(json, Serial);
+  serializeJsonPretty(json, Serial);
 
   // Write data to file and close it
   serializeJson(json, f);
@@ -1727,24 +1727,16 @@ void loop()
 
       // In the last 15 sec of each day we set a pulse to Off-State when we had On-State before
       bool isLast15SecondsOfDay = (localTime.hour() == 23 && localTime.minute() == 59 &&  localTime.second() > 45) ? true : false;
-      
-     
-     viessmAnalogdataCont01.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value));
-     viessmAnalogdataCont01.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value));
-     viessmAnalogdataCont01.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value));
-     viessmAnalogdataCont01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));
-     
 
-      
-      // Get readings from 4 differend analog sensors and store the values in a container     
-     
-     /*
-     dataContainer.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value));
-     dataContainer.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value));
-     dataContainer.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value));
-     dataContainer.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));
-     */
-
+      // Get readings from 4 different analog sensors from the Viessmann Cloud    
+      // and store the values in a container 
+      viessmAnalogdataCont01.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value)); // Aussen
+      viessmAnalogdataCont01.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value)); // Vorlauf                
+      viessmAnalogdataCont01.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value)); // Boiler
+      viessmAnalogdataCont01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));  // HW-Auslass
+          
+      // Get readings from 4 different analog sensors     
+      // and store the values in a container
       dataContainer.SetNewValue(0, dateTimeUTCNow, ReadAnalogSensor(0));
       dataContainer.SetNewValue(1, dateTimeUTCNow, ReadAnalogSensor(1));
       dataContainer.SetNewValue(2, dateTimeUTCNow, ReadAnalogSensor(2));
@@ -1760,9 +1752,7 @@ void loop()
       }
 
       if (OnOffBurnerStatus.HasChangedState())
-      {
-        // RoSchmi
-        Serial.println("Burner has changed state-------");
+      {    
         onOffDataContainer.SetNewOnOffValue(0, OnOffBurnerStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
       }
       if (OnOffCirculationPumpStatus.HasChangedState())
@@ -1833,14 +1823,18 @@ void loop()
           {
             // RoSchmi changed 10.07.2024 to resolve issue 1         
             //augmentedAnalogTableName += (dateTimeUTCNow.year());
-            augmentedAnalogTableName += (localTime.year());  
+            augmentedAnalogTableName += (localTime.year()); 
           }
 
           // Create Azure Storage Table if table doesn't exist
           if (localTime.year() != viessmAnalogdataCont01.Year)    // if new year
           {  
             az_http_status_code theResult = createTable(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedAnalogTableName.c_str());
-                     
+
+            // RoSchmi
+            String strResult = (String)theResult;
+            Serial.printf("Returned Stauscode: %s\n", strResult.c_str());
+
             if ((theResult == AZ_HTTP_STATUS_CODE_CONFLICT) || (theResult == AZ_HTTP_STATUS_CODE_CREATED))
             {
               viessmAnalogdataCont01.Set_Year(localTime.year());                   
@@ -2670,14 +2664,18 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
     features[15] = apiSelectionPtr ->_95_heating_temperature_outside;
     strcpy(features[15].name, (const char *)"_95_heating_temperature_outside");
     
-    //RoSchmi
-    Serial.printf("       Feeding BurnerStatus: %s\n", apiSelectionPtr ->_9_burner_is_active.value); 
+    // Get 4 On/Off sensor values which were read from the Viessmann Api
+    // and store them in a 'twin' of the sensor, reflecting its state 
     OnOffBurnerStatus.Feed(strcmp((const char *)(apiSelectionPtr ->_9_burner_is_active.value), (const char *)"true") == 0, dateTimeUTCNow);
-    
-    
-    OnOffCirculationPumpStatus.Feed(apiSelectionPtr ->_11_circulation_pump_status.value, dateTimeUTCNow);
+    OnOffCirculationPumpStatus.Feed(strcmp((const char *)(apiSelectionPtr ->_11_circulation_pump_status.value), (const char *)"true") == 0, dateTimeUTCNow);
+    OnOffHotWaterCircualtionPumpStatus.Feed(strcmp((const char *)(apiSelectionPtr ->_86_heating_dhw_pump_status.value), (const char *)"true") == 0, dateTimeUTCNow);
+    OnOffHotWaterPrimaryPumpStatus.Feed(strcmp((apiSelectionPtr -> _88_heating_dhw_pump_primary_status.value), (const char *)"true") == 0, dateTimeUTCNow);
+  
+    /*
+    OnOffCirculationPumpStatus.Feed(apiSelectionPtr ->_11_circulation_pump_status.value, dateTimeUTCNow);  
     OnOffHotWaterCircualtionPumpStatus.Feed(apiSelectionPtr ->_86_heating_dhw_pump_status.value,dateTimeUTCNow);
     OnOffHotWaterPrimaryPumpStatus.Feed(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.value, dateTimeUTCNow);
+    */
   }
   else
   {
