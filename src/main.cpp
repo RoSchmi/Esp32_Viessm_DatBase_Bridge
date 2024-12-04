@@ -1713,14 +1713,13 @@ void loop()
                                         localTime.hour() , localTime.minute());
           if (httpCode == t_http_codes::HTTP_CODE_OK)
           {
-            Serial.println("Token Refresh successful");
+            Serial.println("Token Refresh successful\n");
             AccessTokenRefreshTime = dateTimeUTCNow;
 
           }
           else
           {
-            Serial.println("Token Refresh failed");
-            //AccessTokenRefreshTime = (dateTimeUTCNow.operator-(AccessTokenRefreshInterval)).operator+(TimeSpan(5));
+            Serial.println("Token Refresh failed\n");            
             AccessTokenRefreshTime = dateTimeUTCNow.operator-(TimeSpan(300));
           }
       }
@@ -2342,7 +2341,7 @@ ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, cons
     if (httpCode == t_http_codes::HTTP_CODE_OK)
     {
       viessmannApiSelection.lastReadTime = dateTimeUTCNow;
-      Serial.println(F("\n"));
+      //Serial.println(F("\n"));
     }
     else
     {

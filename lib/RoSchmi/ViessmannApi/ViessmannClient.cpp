@@ -41,6 +41,9 @@ ViessmannClient::ViessmannClient(ViessmannApiAccount * account, const char * caC
     _viessmannAccountPtr = account;
     _viessmannCaCert = caCert;
     _viessmannHttpPtr = httpClient;
+    // RoSchmi
+    _viessmannHttpPtr -> setReuse(false);
+
     _viessmannWifiClient = wifiClient;
 
     // Some buffers located in memory segment .dram0.bss are injected to achieve lesser stack consumption
@@ -224,50 +227,64 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
 
 t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const uint16_t reponseBufferLength, const char * refreshToken)
 {
-    String body = "grant_type=refresh_token&client_id=" + (String)_viessmannAccountPtr ->ClientId + "&refresh_token=" + (String)refreshToken; 
-    String encodedUrl = _viessmannAccountPtr -> UriEndPointToken;
+    #define MAXCOUNT 2
+    
+    t_httpCode httpResponseCode = 0;
 
-   //encodedUrl = "https://iam.viessmann.com/idp/v3/token";
-    
-    #if SERIAL_PRINT == 1
-        Serial.println(encodedUrl);
-        Serial.println(body);
-    #endif
-    
-    _viessmannHttpPtr ->begin(encodedUrl);
-    
-    _viessmannHttpPtr ->addHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
-    
-    t_httpCode httpResponseCode =_viessmannHttpPtr ->POST((String)body);
-    if (httpResponseCode > 0) 
+    for (int i = 0; i < MAXCOUNT; i++)
     {
-        
-        Serial.println("Refresh Token: ResponseCode is > 0");
-        
-        String payload = _viessmannHttpPtr ->getString();
-            
+        // Try first with invalid grant to avoid connection refused error
+        String body = i == 0 ? "grant_type=refresh_token&client_id=" + (String)_viessmannAccountPtr ->ClientId + "&refresh_token=" + (String)refreshToken + "*" 
+              : "grant_type=refresh_token&client_id=" + (String)_viessmannAccountPtr ->ClientId + "&refresh_token=" + (String)refreshToken; 
+               
+        String encodedUrl = _viessmannAccountPtr -> UriEndPointToken;
+
+        //encodedUrl = "https://iam.viessmann.com/idp/v3/token";
+    
         #if SERIAL_PRINT == 1
-            Serial.println("Got payload\n");
-            Serial.println(payload);
+            Serial.println(encodedUrl);
+            Serial.println(body);
         #endif
 
-        int charsToCopy = payload.length() < reponseBufferLength ? payload.length() : reponseBufferLength;
-        for (int i = 0; i < charsToCopy; i++)
-        {
-            responseBuffer[i] = payload[i];
-        } 
-    } 
-    else 
-    {
-        Serial.printf("Refresh token: Error performing the request, HTTP-Code: %d\n", httpResponseCode);
-        if (httpResponseCode == HTTPC_ERROR_CONNECTION_REFUSED)
-        {
-           Serial.println("Viessmann Server: Connection refused");
-        }
-    }
-    _viessmannHttpPtr->end();
+        _viessmannHttpPtr ->begin(encodedUrl);
+
+        //_viessmannHttpPtr ->connected
     
-   return httpResponseCode;
+        _viessmannHttpPtr ->addHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
+    
+        httpResponseCode =_viessmannHttpPtr ->POST((String)body);
+        if (httpResponseCode > 0) 
+        {
+            Serial.printf("Refresh Token: ResponseCode is: %d\n", httpResponseCode);
+        
+            String payload = _viessmannHttpPtr ->getString();
+            
+            #if SERIAL_PRINT == 1
+                Serial.println("Got payload:\n");
+                Serial.println(payload);
+            #endif
+
+            int charsToCopy = payload.length() < reponseBufferLength ? payload.length() : reponseBufferLength;
+            for (int i = 0; i < charsToCopy; i++)
+            {
+                responseBuffer[i] = payload[i];
+            } 
+        } 
+        else 
+        {
+            Serial.printf("Refresh token: Error performing the request, HTTP-Code: %d\n", httpResponseCode);
+            if (httpResponseCode == HTTPC_ERROR_CONNECTION_REFUSED)
+            {
+                Serial.println("Viessmann Server: Connection refused");            
+            }
+        }
+        _viessmannHttpPtr->end();
+        
+        delay(1000);
+    }
+       // _viessmannHttpPtr->end();
+    
+    return httpResponseCode;
 }
     
 

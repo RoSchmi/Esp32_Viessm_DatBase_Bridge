@@ -12,21 +12,19 @@
 //
 // Please select the transport protocol, http or https (https is recommended)
 // For https you must include the Root Certificate of your Azure Account
-// like here the baltimore_root_ca
+// like here the 'digicert_globalroot_g2_ca'
 // Select the Sendinterval in minutes
 // Select the Invalidate Interval in minutes (Sensor values not actualized
 // within this interval are considered to be invalid)
 // Define other settings according to your needs
 
-
+// Uri defining where to get data from the Viessmann API
 #define VIESSMANN_USER_BASE_URI  "api.viessmann.com/users/v1/users/me";
-
 #define VIESSMANN_IOT_BASE_URI "api.viessmann.com/iot/v1/";
-
 #define VIESSMANN_TOKEN_BASE_URI "iam.viessmann.com/idp/v3/token";
 
 // The credentials of your WiFi router and the name and key of your
-// Azure Storage Account are set throug WiFi-Manager
+// Azure Storage Account are set through WiFi-Manager
 
 #define USED_MICROPHONE 0        // 0 = SPH0645LM4H, 1 = INMP441
 
@@ -34,8 +32,6 @@
                                             // (Can be changed in WiFi-Manager)
 #define SOUNDSWITCHER_UPDATEINTERVAL 400    // Interval in ms for reading sound level
 #define SOUNDSWITCHER_READ_DELAYTIME 4000   // Delay in ms from switch to displayed value
-
-
 
 #define SENDINTERVAL_MINUTES   10    // Sendinterval in minutes (10 is recommended), in this interval                                        
                                       // data are sent to the Cloud (is limited to be not below 1 second)
@@ -85,11 +81,11 @@
 
 #define ANALOG_SENSOR_READ_INTERVAL_SECONDS 0   // Analog sensors are read with this interval (seconds, can be 0)
 
-#define API_ANALOG_SENSOR_READ_INTERVAL_SECONDS 67  // Analog Sensor values from the Viessmann Api (seconds, can be 0)
+#define API_ANALOG_SENSOR_READ_INTERVAL_SECONDS 77  // Analog Sensor values from the Viessmann Api (seconds, can be 0)
 
-#define VIESSMANN_API_READ_INTERVAL_SECONDS 65  //Vales from the Viessmann Api are read with this timeinterval
+#define VIESSMANN_API_READ_INTERVAL_SECONDS 75  //Vales from the Viessmann Api are read with this timeinterval
 
-#define VIESSMANN_TOKEN_REFRESH_INTERVAL_SECONDS 60 * 30 // Viessman AccessToken is refreshed using this timeInterval
+#define VIESSMANN_TOKEN_REFRESH_INTERVAL_SECONDS 60 * 2 // Viessman AccessToken is refreshed using this timeInterval
 
 #define WORK_WITH_WATCHDOG 0              // 1 = yes, 0 = no, Watchdog is used (1) or not used (0)
                                            // should be 1 for normal operation and 0 for testing

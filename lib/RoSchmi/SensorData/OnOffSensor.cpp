@@ -16,11 +16,11 @@ OnOffSensor::OnOffSensor(bool pActState, bool pLastState, bool pChangedFlag, boo
 void OnOffSensor:: Feed(bool pNewState, DateTime pDate)
 {
     //RoSchmi
-    Serial.printf("Feeding. Newstate = %s, ActState = %s \n ", pNewState ? "true" : "false", actState ? "true" : "false");
+    //Serial.printf("Feeding. Newstate = %s, ActState = %s \n ", pNewState ? "true" : "false", actState ? "true" : "false");
     if (pNewState != actState)
     {
         // RoSchmi
-        Serial.println("Setting changedFlag");
+        // Serial.println("Setting changedFlag");
         lastState = actState;
         actState = pNewState;
         changedFlag = true;
