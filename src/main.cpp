@@ -7,7 +7,7 @@
 // the App was tested only on ESP32, not sure if it works on variations of ESP32
 // or ESP8266
 
-// Now uses
+// Uses
 // platform espressif32@6.7.0 and platform_package framework-arduinoespressif32 @ 3.20017.0
 // Switched to built-in Filesystem 'LittleFS' instead of 'LITTLEFS'
 //
@@ -124,8 +124,8 @@ SET_LOOP_TASK_STACK_SIZE ( 32*1024 ); // 32KB
 // passed to TableClient (is used there as the place for some buffers to preserve stack )
 
 //const uint16_t bufferStoreLength = 4000;
-
 const uint16_t bufferStoreLength = 20000;
+
 uint8_t bufferStore[bufferStoreLength] {0};
 uint8_t * bufferStorePtr = &bufferStore[0];
 
@@ -289,6 +289,10 @@ int insertCounterApiAnalogTable01 = 0;
 uint32_t tryUploadCounter = 0;
 uint32_t failedUploadCounter = 0;
 uint32_t timeNtpUpdateCounter = 0;
+
+uint32_t loadFeaturesCount = 0;
+uint32_t loadRefreshTokenCount = 0;
+
 // not used on Esp32
 int32_t sysTimeNtpDelta = 0;
 
@@ -300,6 +304,7 @@ int32_t sysTimeNtpDelta = 0;
   Rs_TimeNameHelper timeNameHelper;
 
   DateTime dateTimeUTCNow;    // Seconds since 2000-01-01 08:00:00
+  DateTime localTime;
 
   Timezone myTimezone;
 
@@ -1597,7 +1602,9 @@ void setup()
                                         dateTimeUTCNow.hour() , dateTimeUTCNow.minute());
   Serial.println("");
   
-  DateTime localTime = myTimezone.toLocal(dateTimeUTCNow.unixtime());
+  // RoSchmi
+  //DateTime localTime = myTimezone.toLocal(dateTimeUTCNow.unixtime());
+  localTime = myTimezone.toLocal(dateTimeUTCNow.unixtime());
   
   Serial.printf("%s %i %02d %02d %02d %02d", (char *)"Local-Time is:", localTime.year(), 
                                         localTime.month() , localTime.day(),
@@ -1611,11 +1618,11 @@ void setup()
   httpCode = refreshAccessTokenFromApi(myX509Certificate, myViessmannApiAccountPtr, viessmannRefreshToken);
   if (httpCode == t_http_codes::HTTP_CODE_OK)
   {
-    Serial.printf("%s %i.%02d.%02d %02d:%02d ", (char *)"At: ", localTime.year(), 
+    Serial.printf("%s %i/%02d/%02d %02d:%02d ", (char *)"", localTime.year(), 
                                         localTime.month() , localTime.day(),
                                         localTime.hour() , localTime.minute());
-    Serial.println(F("Could refresh AccessToken successfully from Viessmann Cloud"));
-    
+    Serial.println(F("Could refresh AccessToken from Viessmann Cloud"));
+    Serial.println("");
     AccessTokenRefreshTime = dateTimeUTCNow;
   }
   else
@@ -1703,12 +1710,14 @@ void loop()
       // Get offset in minutes between UTC and local time with consideration of DST
       int timeZoneOffsetUTC = myTimezone.utcIsDST(dateTimeUTCNow.unixtime()) ? TIMEZONEOFFSET + DSTOFFSET : TIMEZONEOFFSET;
       
-      DateTime localTime = myTimezone.toLocal(dateTimeUTCNow.unixtime());
+      // RoSchmi
+      //DateTime localTime = myTimezone.toLocal(dateTimeUTCNow.unixtime());
+      localTime = myTimezone.toLocal(dateTimeUTCNow.unixtime());
       
       if ((AccessTokenRefreshTime.operator+(AccessTokenRefreshInterval)).operator<(dateTimeUTCNow))
       {
           httpCode = refreshAccessTokenFromApi(myX509Certificate, myViessmannApiAccountPtr, viessmannRefreshToken);
-          Serial.printf("%s %i.%02d.%02d %02d:%02d ", (char *)"At: ", localTime.year(), 
+          Serial.printf("%i.%02d.%02d %02d:%02d ", localTime.year(), 
                                         localTime.month() , localTime.day(),
                                         localTime.hour() , localTime.minute());
           if (httpCode == t_http_codes::HTTP_CODE_OK)
@@ -2623,9 +2632,12 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
 
   memset(bufferStorePtr, '\0', bufferStoreLength);
   ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
-  
+  Serial.printf("\r\n(%u) ",loadFeaturesCount);
+  Serial.printf("%i/%02d/%02d %02d:%02d ", localTime.year(), 
+                                        localTime.month() , localTime.day(),
+                                        localTime.hour() , localTime.minute());
   t_httpCode responseCode = viessmannClient.GetFeatures(bufferStorePtr, bufferStoreLength, data_0_id, Gateways_0_Serial, Gateways_0_Devices_0_Id, apiSelectionPtr);
-  Serial.printf("\r\nFeatures: httpResponseCode is: %d\r\n", responseCode);
+  Serial.printf("(%u) Features: httpResponseCode is: %d\r\n", loadFeaturesCount++, responseCode);
   if (responseCode == t_http_codes::HTTP_CODE_OK)
   {
     // Populate features array and replace the name read from Api

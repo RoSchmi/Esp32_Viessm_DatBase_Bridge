@@ -73,17 +73,18 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
     sprintf(InstallationId, "%d", data_0_id);
 
     char GatewaySerial[30] = {0};
-
+    
     String addendum = "features/installations/" + (String)InstallationId + "/gateways/" + (String(gateways_0_serial) + "/devices/" + String(gateways_0_devices_0_id) + "/features"); 
-    String encodedUrl = _viessmannAccountPtr -> UriEndPointIot + addendum;
+    String Url = _viessmannAccountPtr -> UriEndPointIot + addendum;
     String authorizationHeader = "Bearer " + _viessmannAccountPtr ->AccessToken;
-    Serial.println(encodedUrl);
+    Serial.println(F("Loading features"));
+    //Serial.println(Url);
 
     //https://arduinojson.org/v7/how-to/use-arduinojson-with-httpclient/
 
     _viessmannHttpPtr ->useHTTP10(true);   // Must be reset to false for Azure requests
                                            // Is needed to load the long features JSON string 
-    _viessmannHttpPtr ->begin(encodedUrl);
+    _viessmannHttpPtr ->begin(Url);
     _viessmannHttpPtr ->addHeader("Authorization", authorizationHeader);
     t_httpCode httpResponseCode = _viessmannHttpPtr ->GET();   
     if (httpResponseCode > 0) 
@@ -227,17 +228,19 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
 
 t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const uint16_t reponseBufferLength, const char * refreshToken)
 {
-    #define MAXCOUNT 2
+    //#define MAXCOUNT 2
     
-    t_httpCode httpResponseCode = 0;
+    // t_httpCode httpResponseCode = 0;
 
-    for (int i = 0; i < MAXCOUNT; i++)
-    {
+    //for (int i = 0; i < MAXCOUNT; i++)
+    //{
         // Try first with invalid grant to avoid connection refused error
-        String body = i == 0 ? "grant_type=refresh_token&client_id=" + (String)_viessmannAccountPtr ->ClientId + "&refresh_token=" + (String)refreshToken + "*" 
-              : "grant_type=refresh_token&client_id=" + (String)_viessmannAccountPtr ->ClientId + "&refresh_token=" + (String)refreshToken; 
-               
-        String encodedUrl = _viessmannAccountPtr -> UriEndPointToken;
+        //String body = i == 0 ? "grant_type=refresh_token&client_id=" + (String)_viessmannAccountPtr ->ClientId + "&refresh_token=" + (String)refreshToken + "*" 
+        //      : "grant_type=refresh_token&client_id=" + (String)_viessmannAccountPtr ->ClientId + "&refresh_token=" + (String)refreshToken; 
+
+        String body = "grant_type=refresh_token&client_id=" + (String)_viessmannAccountPtr ->ClientId + "&refresh_token=" + (String)refreshToken; 
+           
+        String Url = _viessmannAccountPtr -> UriEndPointToken;
 
         //encodedUrl = "https://iam.viessmann.com/idp/v3/token";
     
@@ -246,13 +249,11 @@ t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const ui
             Serial.println(body);
         #endif
 
-        _viessmannHttpPtr ->begin(encodedUrl);
+        _viessmannHttpPtr ->begin(Url);
 
-        //_viessmannHttpPtr ->connected
-    
         _viessmannHttpPtr ->addHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
     
-        httpResponseCode =_viessmannHttpPtr ->POST((String)body);
+        t_httpCode httpResponseCode =_viessmannHttpPtr ->POST((String)body);
         if (httpResponseCode > 0) 
         {
             Serial.printf("Refresh Token: ResponseCode is: %d\n", httpResponseCode);
@@ -275,13 +276,14 @@ t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const ui
             Serial.printf("Refresh token: Error performing the request, HTTP-Code: %d\n", httpResponseCode);
             if (httpResponseCode == HTTPC_ERROR_CONNECTION_REFUSED)
             {
-                Serial.println("Viessmann Server: Connection refused");            
+                Serial.println("Viessmann Server: Connection refused");
+                delay(500);          
             }
         }
         _viessmannHttpPtr->end();
         
-        delay(1000);
-    }
+        //delay(1000);
+    
        // _viessmannHttpPtr->end();
     
     return httpResponseCode;
@@ -290,10 +292,10 @@ t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const ui
 
 t_httpCode ViessmannClient::GetEquipment(uint8_t* responseBuffer, const uint16_t reponseBufferLength)
 {
-    String encodedUrl = _viessmannAccountPtr -> UriEndPointIot + "equipment/installations" + "?includeGateways=true"; 
+    String Url = _viessmannAccountPtr -> UriEndPointIot + "equipment/installations" + "?includeGateways=true"; 
     String authorizationHeader = "Bearer " + _viessmannAccountPtr ->AccessToken;
-    Serial.println(encodedUrl);
-    _viessmannHttpPtr ->begin(encodedUrl);
+    Serial.println(Url);
+    _viessmannHttpPtr ->begin(Url);
     _viessmannHttpPtr ->addHeader("Authorization", authorizationHeader);
     t_httpCode httpResponseCode = _viessmannHttpPtr ->GET();   
     if (httpResponseCode > 0) 
@@ -315,12 +317,12 @@ t_httpCode ViessmannClient::GetEquipment(uint8_t* responseBuffer, const uint16_t
 
 t_httpCode ViessmannClient::GetUser(uint8_t* responseBuffer, const uint16_t reponseBufferLength)
 {
-    String encodedUrl = _viessmannAccountPtr -> UriEndPointUser + "?sections=identity"; 
+    String Url = _viessmannAccountPtr -> UriEndPointUser + "?sections=identity"; 
 
     String authorizationHeader = "Bearer " + _viessmannAccountPtr ->AccessToken;
-    Serial.println(encodedUrl);
+    Serial.println(Url);
 
-    _viessmannHttpPtr ->begin(encodedUrl);
+    _viessmannHttpPtr ->begin(Url);
     _viessmannHttpPtr ->addHeader("Authorization", authorizationHeader);
     t_httpCode httpResponseCode = _viessmannHttpPtr ->GET();   
     if (httpResponseCode > 0) 
