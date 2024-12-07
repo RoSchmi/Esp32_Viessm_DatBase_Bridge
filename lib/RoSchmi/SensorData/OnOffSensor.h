@@ -8,7 +8,7 @@ class OnOffSensor
 {
 public:
     OnOffSensor(bool pIsActive);
-    OnOffSensor(bool pactState, bool pLastState, bool pChangedFlag, bool pIsActive,  DateTime pLastSwitchTime);
+    OnOffSensor(bool pIsActive, bool pactState, bool pLastState, bool pChangedFlag,  DateTime pLastSwitchTime);
     
     void begin(TimeSpan interval);
 

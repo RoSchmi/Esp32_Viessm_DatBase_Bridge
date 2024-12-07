@@ -85,7 +85,7 @@
 
 #define VIESSMANN_API_READ_INTERVAL_SECONDS 75  //Vales from the Viessmann Api are read with this timeinterval
 
-#define VIESSMANN_TOKEN_REFRESH_INTERVAL_SECONDS 60 * 2 // Viessman AccessToken is refreshed using this timeInterval
+#define VIESSMANN_TOKEN_REFRESH_INTERVAL_SECONDS 60 * 30 // Viessman AccessToken is refreshed using this timeInterval
 
 #define WORK_WITH_WATCHDOG 0              // 1 = yes, 0 = no, Watchdog is used (1) or not used (0)
                                            // should be 1 for normal operation and 0 for testing

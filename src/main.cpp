@@ -167,8 +167,8 @@ char Gateways_0_Devices_0_Id[equipBufLen] = {0};
 ViessmannApiSelection::Feature features[FEATURES_COUNT];
 
 #define IS_ACTIVE true
-OnOffSensor OnOffBurnerStatus(true, false, true, true, DateTime());
-OnOffSensor OnOffCirculationPumpStatus(IS_ACTIVE);
+OnOffSensor OnOffBurnerStatus(IS_ACTIVE, false, true, true, DateTime());
+OnOffSensor OnOffCirculationPumpStatus(IS_ACTIVE, false, true, true, DateTime());
 OnOffSensor OnOffHotWaterCircualtionPumpStatus(IS_ACTIVE);
 OnOffSensor OnOffHotWaterPrimaryPumpStatus(IS_ACTIVE);
 
@@ -2678,15 +2678,9 @@ t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * my
     // Get 4 On/Off sensor values which were read from the Viessmann Api
     // and store them in a 'twin' of the sensor, reflecting its state 
     OnOffBurnerStatus.Feed(strcmp((const char *)(apiSelectionPtr ->_9_burner_is_active.value), (const char *)"true") == 0, dateTimeUTCNow);
-    OnOffCirculationPumpStatus.Feed(strcmp((const char *)(apiSelectionPtr ->_11_circulation_pump_status.value), (const char *)"true") == 0, dateTimeUTCNow);
-    OnOffHotWaterCircualtionPumpStatus.Feed(strcmp((const char *)(apiSelectionPtr ->_86_heating_dhw_pump_status.value), (const char *)"true") == 0, dateTimeUTCNow);
-    OnOffHotWaterPrimaryPumpStatus.Feed(strcmp((apiSelectionPtr -> _88_heating_dhw_pump_primary_status.value), (const char *)"true") == 0, dateTimeUTCNow);
-  
-    /*
-    OnOffCirculationPumpStatus.Feed(apiSelectionPtr ->_11_circulation_pump_status.value, dateTimeUTCNow);  
-    OnOffHotWaterCircualtionPumpStatus.Feed(apiSelectionPtr ->_86_heating_dhw_pump_status.value,dateTimeUTCNow);
-    OnOffHotWaterPrimaryPumpStatus.Feed(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.value, dateTimeUTCNow);
-    */
+    OnOffCirculationPumpStatus.Feed(strcmp((const char *)(apiSelectionPtr ->_11_circulation_pump_status.value), (const char *)"on") == 0, dateTimeUTCNow);
+    OnOffHotWaterCircualtionPumpStatus.Feed(strcmp((const char *)(apiSelectionPtr ->_86_heating_dhw_pump_status.value), (const char *)"on") == 0, dateTimeUTCNow);
+    OnOffHotWaterPrimaryPumpStatus.Feed(strcmp((apiSelectionPtr -> _88_heating_dhw_pump_primary_status.value), (const char *)"on") == 0, dateTimeUTCNow);   
   }
   else
   {
