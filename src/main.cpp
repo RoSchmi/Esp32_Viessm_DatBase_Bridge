@@ -326,11 +326,13 @@ char sSwiThresholdStr[6] = SOUNDSWITCHER_THRESHOLD;
 
 #define AzureAccountName_Label "azureAccountName"
 #define AzureAccountKey_Label "azureAccountKey"
+#define ViessmannClientId_Label "viessmannClientId"
+#define ViessmannRefreshToken_Label "viessmannRefreshToken"
 #define SoundSwitcherThresholdString_Label "sSwiThresholdStr"
 
 // Function Prototypes for WiFiManager
-bool readConfigFile();
-bool writeConfigFile();
+bool loadApplConfigData();
+bool saveApplConfigData();
 
 // Note: AzureAccountName and azureccountKey will be changed later in setup
 CloudStorageAccount myCloudStorageAccount(azureAccountName, azureAccountKey, UseHttps_State);
@@ -342,6 +344,7 @@ void GPIOPinISR()
 }
 
 // function forward declarations
+void trimLeadingSpaces(char * workstr);
 ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, const char * pSensorName);
 t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, const char * refreshToken); 
 t_httpCode readFeaturesFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, uint32_t Data_0_Id, const char * p_gateways_0_serial, const char * p_gateways_0_devices_0_id, ViessmannApiSelection * apiSelectionPtr);
@@ -781,7 +784,7 @@ int calcChecksum(uint8_t* address, uint16_t sizeToCalc)
   return checkSum;
 }
 
-bool loadConfigData()    // Load configuration to access Router WiFi Credentials from filesystem
+bool loadWiFiConfigData()    // Load configuration to access Router WiFi Credentials from filesystem
 {
   File file = FileFS.open(CONFIG_FILENAME, "r");
   LOGERROR(F("LoadWiFiCfgFile "));
@@ -828,7 +831,7 @@ bool loadConfigData()    // Load configuration to access Router WiFi Credentials
   }
 }
 
-void saveConfigData()   // Save Router WiFi-Credentials to file
+void saveWiFiConfigData()   // Save Router WiFi-Credentials to file
 {
   File file = FileFS.open(CONFIG_FILENAME, "w");
   LOGERROR(F("SaveWiFiCfgFile "));
@@ -848,9 +851,9 @@ void saveConfigData()   // Save Router WiFi-Credentials to file
   {
     LOGERROR(F("failed"));
   }
-}
+}   // end saveWiFiConfigData
 
-bool readConfigFile()    // Config parameter for Azure credentials and threshold
+bool loadApplConfigData()    // Config parameter for Azure credentials, Viessmann Refresh-Token and threshold
 {
   // this opens the config file in read-mode
   File f = FileFS.open(CONFIG_FILE, "r");
@@ -871,9 +874,9 @@ bool readConfigFile()    // Config parameter for Azure credentials and threshold
     f.readBytes(buf.get(), size);
     // Closing file
     f.close();
+
     // Using dynamic JSON buffer which is not the recommended memory model, but anyway
     // See https://github.com/bblanchon/ArduinoJson/wiki/Memory%20model
-
 #if (ARDUINOJSON_VERSION_MAJOR >= 6)
     
     DynamicJsonDocument json(1024);
@@ -908,6 +911,20 @@ bool readConfigFile()    // Config parameter for Azure credentials and threshold
     {
       strcpy(azureAccountKey, json[AzureAccountKey_Label]);    
     }
+    if (json.containsKey(ViessmannClientId_Label))
+    {
+      if (strlen(json[ViessmannClientId_Label]) > 2)
+      {
+        strcpy(viessmannClientId, json[ViessmannClientId_Label]);
+      }      
+    }
+    if (json.containsKey(ViessmannRefreshToken_Label))
+    {
+      if (strlen(json[ViessmannRefreshToken_Label]) > 2)
+      {
+        strcpy(viessmannRefreshToken, json[ViessmannRefreshToken_Label]);
+      }      
+    }
     if (json.containsKey(SoundSwitcherThresholdString_Label))
     {
       strcpy(sSwiThresholdStr, json[SoundSwitcherThresholdString_Label]);      
@@ -917,9 +934,9 @@ bool readConfigFile()    // Config parameter for Azure credentials and threshold
   return true;
 }
 
-bool writeConfigFile()
+bool saveApplConfigData()
 {
-  LOGERROR(F("Saving additional config to file"));
+  LOGERROR(F("Saving additional configuration to file"));
   
 #if (ARDUINOJSON_VERSION_MAJOR >= 6)
   DynamicJsonDocument json(1024);
@@ -928,9 +945,22 @@ bool writeConfigFile()
   JsonObject& json = jsonBuffer.createObject();
 #endif
 
+  // Occasionally it happenend that blanks were accidently
+  // added at start of the strings through 'copy and paste'
+  // so to be safe, leading blanks are removed
+  trimLeadingSpaces((char *)azureAccountKey);
+  trimLeadingSpaces((char *)viessmannClientId);
+  trimLeadingSpaces((char *)viessmannRefreshToken);
+
   // JSONify local configuration parameters 
   json[AzureAccountName_Label] = azureAccountName;
-  json[AzureAccountKey_Label] = azureAccountKey;
+  json[AzureAccountKey_Label] = strlen(azureAccountKey) > 2 ? azureAccountKey : "";
+  json[ViessmannClientId_Label] = strlen(viessmannClientId) > 2 ? viessmannClientId : "";
+  json[ViessmannRefreshToken_Label] = strlen(viessmannRefreshToken) > 2 ? viessmannRefreshToken : "";
+  
+  //json[AzureAccountKey_Label] = azureAccountKey;
+  //json[ViessmannClientId_Label] = viessmannClientId;
+  //json[ViessmannRefreshToken_Label] = viessmannRefreshToken;
   json[SoundSwitcherThresholdString_Label] = sSwiThresholdStr;
   // Open file for writing
   File f = FileFS.open(CONFIG_FILE, "w");
@@ -944,7 +974,7 @@ bool writeConfigFile()
 #if (ARDUINOJSON_VERSION_MAJOR >= 6)
 
   Serial.println(F("Here we could print the additional config parameter written to file"));
-  serializeJsonPretty(json, Serial);
+  //serializeJsonPretty(json, Serial);
 
   // Write data to file and close it
   serializeJson(json, f);
@@ -958,6 +988,22 @@ bool writeConfigFile()
 
   Serial.println(F("\nConfig file was successfully saved"));
   return true;
+}
+
+void trimLeadingSpaces(char *str) {
+    int index = 0;
+    int i = 0;
+
+    // Finde die Position des ersten Nicht-Leerzeichens
+    while (str[index] != '\0' && isspace((unsigned char)str[index])) {
+        index++;
+    }
+
+    // Verschiebe die Zeichen nach vorne
+    while (str[index] != '\0') {
+        str[i++] = str[index++];
+    }
+    str[i] = '\0'; // Null-terminieren des Strings
 }
 
 void setup()
@@ -1056,7 +1102,6 @@ void setup()
   
   delay(4000);
   
-
   // If wanted -> Wait on press/release of boot button
   /*
   Serial.println(F("\r\n\r\nPress Boot Button to continue!"));
@@ -1136,7 +1181,7 @@ void setup()
   initSTAIPConfigStruct(WM_STA_IPconfig);  // For WiFi-STA Mode, Connect with router
   //////
 
-  if (!readConfigFile())       // For Azure Credentials and threshold
+  if (!loadApplConfigData())   // For Azure Credentials, Viessman Refresh-Token and threshold
   {
     Serial.println(F("Failed to read ConfigFile, using default values"));
   }
@@ -1201,25 +1246,29 @@ void setup()
   // After connecting, parameter.getValue() will get you the configured value
   // Format: <ID> <Placeholder text> <default value> <length> <custom HTML> <label placement>
   
-  ESPAsync_WMParameter p_azureAccountName(AzureAccountName_Label, "Storage Account Name", azureAccountName, 20); 
-  ESPAsync_WMParameter p_azureAccountKey(AzureAccountKey_Label, "Storage Account Key", "", 90);
-  ESPAsync_WMParameter p_soundSwitcherThreshold(SoundSwitcherThresholdString_Label, "Threshold", sSwiThresholdStr, 6);
+  ESPAsync_WMParameter p_azureAccountName(AzureAccountName_Label, "Azure Storage Account Name", azureAccountName, 20);
+  ESPAsync_WMParameter p_azureAccountKey(AzureAccountKey_Label, "Azure Storage Account Key", "", 90);
+  ESPAsync_WMParameter p_viessmannClientId(ViessmannClientId_Label, "Viessmann Client Id", viessmannClientId, 50);
+  ESPAsync_WMParameter p_viessmannRefreshToken(ViessmannRefreshToken_Label, "Viessmann Refresh Token", "", 60);
+  ESPAsync_WMParameter p_soundSwitcherThreshold(SoundSwitcherThresholdString_Label, "Noise Threshold", sSwiThresholdStr, 6);
   // Just a quick hint
   ESPAsync_WMParameter p_hint("<small>*Hint: if you want to reuse the currently active WiFi credentials, leave SSID and Password fields empty. <br/>*Portal Password = MyESP_'hexnumber'</small>");
-  ESPAsync_WMParameter p_hint2("<small><br/>*Hint: to enter the long Azure Key, send it to your Phone by E-Mail and use copy and paste.</small>");
+  ESPAsync_WMParameter p_hint2("<small><br/>*Hint: to enter the Azure Key, Viessmann Client Id and Viessmann Refresh Token send them to your Phone by E-Mail and use copy and paste.<br/></small>");
     
   //add all parameters here
   ESPAsync_wifiManager.addParameter(&p_hint);
   ESPAsync_wifiManager.addParameter(&p_hint2);
   ESPAsync_wifiManager.addParameter(&p_azureAccountName);
   ESPAsync_wifiManager.addParameter(&p_azureAccountKey);
+  ESPAsync_wifiManager.addParameter(&p_viessmannClientId);
+  ESPAsync_wifiManager.addParameter(&p_viessmannRefreshToken);
   ESPAsync_wifiManager.addParameter(&p_soundSwitcherThreshold);
 
   // Check if there are stored WiFi router/password credentials.
   // If not found, device will remain in configuration mode until switched off via webserver.
   Serial.println(F("Opening configuration portal."));
   
-  bool configDataLoaded = false;
+  bool configWiFiDataLoaded = false;
 
   // From v1.1.0, Don't permit NULL password
   if ( (Router_SSID != "") && (Router_Pass != "") )
@@ -1237,10 +1286,9 @@ void setup()
     LOGERROR3(F("From v1.1.0 * Neglect ESP-Self_Stored SSID = "), Router_SSID, F(", PW = "), Router_Pass);
   }
   
-
-  if (loadConfigData())   // Load credentials for Router WiFi STA connection from SPIFFS/LittleFS    
+  if (loadWiFiConfigData())   // Load credentials for Router WiFi STA connection from SPIFFS/LittleFS    
   {
-    configDataLoaded = true;
+    configWiFiDataLoaded = true;
     
     ESPAsync_wifiManager.setConfigPortalTimeout(60); //If no access point name has been previously entered disable timeout.
     Serial.println(F("Got stored Credentials. Timeout 60s for Config Portal"));
@@ -1255,8 +1303,10 @@ void setup()
     LOGERROR3(F("SSID: "), Loaded_WM_config.WiFi_Creds[i].wifi_ssid, F(", PW = "), Loaded_WM_config.WiFi_Creds[i].wifi_pw);
     }
     
+
+
 #if DISPLAY_STORED_CREDENTIALS_IN_CP    // Cave: This directive is alse used in ESPAsync_WiFiManger
-    // New. Update Credentials, got from loadConfigData(), to display on CP
+    // New. Update Credentials, got from loadWiFiConfigData(), to display on CP
     
     // Cave:dangerous, the passwords should never be shown
     
@@ -1399,7 +1449,7 @@ void setup()
     {
       LOGERROR3(F("Saved SSID: "), WM_config.WiFi_Creds[i].wifi_ssid, F(", PW = "), WM_config.WiFi_Creds[i].wifi_pw );
     }
-    saveConfigData();
+    saveWiFiConfigData();
   }
 
   
@@ -1411,11 +1461,19 @@ void setup()
   {
     strcpy(azureAccountKey, p_azureAccountKey.getValue());
   }
+  if (strlen(p_viessmannClientId.getValue()) > 1)
+  {
+    strcpy(viessmannClientId, p_viessmannClientId.getValue());
+  }
+  if (strlen(p_viessmannRefreshToken.getValue()) > 1)
+  {
+    strcpy(viessmannRefreshToken, p_viessmannRefreshToken.getValue());
+  }
   strcpy(sSwiThresholdStr, p_soundSwitcherThreshold.getValue());
     
     // Writing JSON config file to flash for next boot
 
-  writeConfigFile();
+  saveApplConfigData();
 
   digitalWrite(LED_BUILTIN, LED_OFF); // Turn led off as we are not in configuration mode.
 
@@ -1714,6 +1772,7 @@ void loop()
       //DateTime localTime = myTimezone.toLocal(dateTimeUTCNow.unixtime());
       localTime = myTimezone.toLocal(dateTimeUTCNow.unixtime());
       
+      // refresh access token if refresh interval has expired 
       if ((AccessTokenRefreshTime.operator+(AccessTokenRefreshInterval)).operator<(dateTimeUTCNow))
       {
           httpCode = refreshAccessTokenFromApi(myX509Certificate, myViessmannApiAccountPtr, viessmannRefreshToken);
