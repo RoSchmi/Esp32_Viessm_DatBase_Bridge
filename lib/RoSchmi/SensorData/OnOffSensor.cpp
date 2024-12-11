@@ -20,7 +20,7 @@ void OnOffSensor:: Feed(bool pNewState, DateTime pDate)
     if (pNewState != actState)
     {
         // RoSchmi
-        Serial.println("Setting changedFlag");
+        // Serial.println("Setting changedFlag");
         lastState = actState;
         actState = pNewState;
         changedFlag = true;

@@ -87,12 +87,15 @@ SampleValueSet DataContainerWio::getSampleValues(DateTime pActDateTime)
     return _SampleValuesSet;
 }
 
-SampleValueSet DataContainerWio::getCheckedSampleValues(DateTime pActDateTime)
+SampleValueSet DataContainerWio::getCheckedSampleValues(DateTime pActDateTime, bool pUpdateSentFlags = true)
 {
-    _hasToBeSent = false;
-    _isFirstTransmission = false;
-    _SampleValuesSet.LastSendTime = _lastSentTime;
-    _lastSentTime = pActDateTime;
+    if (pUpdateSentFlags)
+    {
+        _hasToBeSent = false;
+        _isFirstTransmission = false;
+        _SampleValuesSet.LastSendTime = _lastSentTime;
+        _lastSentTime = pActDateTime;
+    }
    
    _SampleValuesSet.SampleValues[0] = checkedSampleValue(SampleValues[0], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval);
    _SampleValuesSet.SampleValues[1] = checkedSampleValue(SampleValues[1], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval);

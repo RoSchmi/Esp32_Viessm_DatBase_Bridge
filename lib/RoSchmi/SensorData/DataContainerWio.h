@@ -31,7 +31,7 @@ public:
     String floToStr(float value);
     SampleValue checkedSampleValue(SampleValue inSampleValue, float lowLimit, float upperLimit, float invalidSubstitute,  DateTime actDateTime, TimeSpan invalidateTime);
     void SetNewValue(uint32_t pIndex, DateTime pActDateTime, float pSampleValue);
-    SampleValueSet getCheckedSampleValues(DateTime pActDateTime);
+    SampleValueSet getCheckedSampleValues(DateTime pActDateTime, bool pUpdateSentFlags);
     SampleValueSet getSampleValues(DateTime pActDateTime);
     void setHasToBeSentFlag();
     bool hasToBeSent();

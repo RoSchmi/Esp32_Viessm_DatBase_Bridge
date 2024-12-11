@@ -242,10 +242,10 @@ t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const ui
            
         String Url = _viessmannAccountPtr -> UriEndPointToken;
 
-        //encodedUrl = "https://iam.viessmann.com/idp/v3/token";
+        //Url = "https://iam.viessmann.com/idp/v3/token";
     
         #if SERIAL_PRINT == 1
-            Serial.println(encodedUrl);
+            Serial.println(Url);
             Serial.println(body);
         #endif
 
@@ -256,13 +256,15 @@ t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const ui
         t_httpCode httpResponseCode =_viessmannHttpPtr ->POST((String)body);
         if (httpResponseCode > 0) 
         {
+            #if SERIAL_PRINT == 1
             Serial.printf("Refresh Token: ResponseCode is: %d\n", httpResponseCode);
-        
+            #endif
+
             String payload = _viessmannHttpPtr ->getString();
             
             #if SERIAL_PRINT == 1
-                Serial.println("Got payload:\n");
-                Serial.println(payload);
+                //Serial.println("Got payload:\n");
+                //Serial.println(payload);
             #endif
 
             int charsToCopy = payload.length() < reponseBufferLength ? payload.length() : reponseBufferLength;

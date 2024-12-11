@@ -1675,12 +1675,7 @@ void setup()
   
   httpCode = refreshAccessTokenFromApi(myX509Certificate, myViessmannApiAccountPtr, viessmannRefreshToken);
   if (httpCode == t_http_codes::HTTP_CODE_OK)
-  {
-    Serial.printf("%s %i/%02d/%02d %02d:%02d ", (char *)"", localTime.year(), 
-                                        localTime.month() , localTime.day(),
-                                        localTime.hour() , localTime.minute());
-    Serial.println(F("Could refresh AccessToken from Viessmann Cloud"));
-    Serial.println("");
+  {   
     AccessTokenRefreshTime = dateTimeUTCNow;
   }
   else
@@ -1698,6 +1693,7 @@ void setup()
   if (httpCode == t_http_codes::HTTP_CODE_OK)
   {
     Serial.println(F("UserId successfully read from Viessmann Cloud"));
+    Serial.println(F(""));
     viessmannUserId_is_read = true;    
   }
   else
@@ -1727,12 +1723,8 @@ void setup()
       delay(500);
     }
   }
-
 }
   
-  
-
-
 void loop()
 {
   check_status();   // Checks if WiFi is still connected
@@ -1776,14 +1768,10 @@ void loop()
       if ((AccessTokenRefreshTime.operator+(AccessTokenRefreshInterval)).operator<(dateTimeUTCNow))
       {
           httpCode = refreshAccessTokenFromApi(myX509Certificate, myViessmannApiAccountPtr, viessmannRefreshToken);
-          Serial.printf("%i.%02d.%02d %02d:%02d ", localTime.year(), 
-                                        localTime.month() , localTime.day(),
-                                        localTime.hour() , localTime.minute());
+          
           if (httpCode == t_http_codes::HTTP_CODE_OK)
-          {
-            Serial.println("Token Refresh successful\n");
+          {           
             AccessTokenRefreshTime = dateTimeUTCNow;
-
           }
           else
           {
@@ -1795,14 +1783,14 @@ void loop()
       // In the last 15 sec of each day we set a pulse to Off-State when we had On-State before
       bool isLast15SecondsOfDay = (localTime.hour() == 23 && localTime.minute() == 59 &&  localTime.second() > 45) ? true : false;
 
-      // Get readings from 4 different analog sensors from the Viessmann Cloud    
+      // Get readings from 4 different analog sensors stored in the Viessmann Cloud    
       // and store the values in a container 
       viessmAnalogdataCont01.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value)); // Aussen
       viessmAnalogdataCont01.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value)); // Vorlauf                
       viessmAnalogdataCont01.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value)); // Boiler
       viessmAnalogdataCont01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));  // HW-Auslass
           
-      // Get readings from 4 different analog sensors     
+      // Get readings from 4 different analog sensors, (preferably measured by the Esp 32 device, e.g. noise level)     
       // and store the values in a container
       dataContainer.SetNewValue(0, dateTimeUTCNow, ReadAnalogSensor(0));
       dataContainer.SetNewValue(1, dateTimeUTCNow, ReadAnalogSensor(1));
@@ -1810,14 +1798,17 @@ void loop()
       dataContainer.SetNewValue(3, dateTimeUTCNow, ReadAnalogSensor(3));
       
       // Check if automatic OnOffSwitcher has toggled (used to simulate on/off changes)
-      // and accordingly change the state of one representation (here index 2 and 3) in onOffDataContainer
+      // and accordingly change the state of one representation (here index 3) in onOffDataContainer
+      // This can be used for debugging, shows that displayin on/off states is
+      // working
+      /*
       if (onOffSwitcherWio.hasToggled(dateTimeUTCNow))
       {
         bool state = onOffSwitcherWio.GetState();
-        //onOffDataContainer.SetNewOnOffValue(2, state, dateTimeUTCNow, timeZoneOffsetUTC);
         onOffDataContainer.SetNewOnOffValue(3, !state, dateTimeUTCNow, timeZoneOffsetUTC);    
       }
-
+      */
+      
       if (OnOffBurnerStatus.HasChangedState())
       {    
         onOffDataContainer.SetNewOnOffValue(0, OnOffBurnerStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
@@ -1832,10 +1823,10 @@ void loop()
       }
       if (OnOffHotWaterPrimaryPumpStatus.HasChangedState())
       {
-        //onOffDataContainer.SetNewOnOffValue(3, OnOffHotWaterPrimaryPumpStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
+        onOffDataContainer.SetNewOnOffValue(3, OnOffHotWaterPrimaryPumpStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
       }
       
-      /*
+      
       // This is for Burner Sound Sensor (not used here)    
       if (feedResult.isValid && (feedResult.hasToggled || feedResult.analogToSend))
       {
@@ -1856,7 +1847,7 @@ void loop()
             Serial.println();
           }           
       }
-      */
+      
         
       // Check if something is to do: send analog data ? send On/Off-Data ? Handle EndOfDay stuff ?
       if (viessmAnalogdataCont01.hasToBeSent() || dataContainer.hasToBeSent() || onOffDataContainer.One_hasToBeBeSent(localTime) || isLast15SecondsOfDay)
@@ -1878,10 +1869,10 @@ void loop()
         az_span rowKey = AZ_SPAN_FROM_BUFFER(rowKeySpan);
         
         
-        if (viessmAnalogdataCont01.hasToBeSent())       // have to send analog values ?
+        if (viessmAnalogdataCont01.hasToBeSent())   // have to send analog values read from Viessmann ?
         {
           // Retrieve edited sample values from container
-          SampleValueSet sampleValueSet = viessmAnalogdataCont01.getCheckedSampleValues(dateTimeUTCNow);
+          SampleValueSet sampleValueSet = viessmAnalogdataCont01.getCheckedSampleValues(dateTimeUTCNow, true);
                   
           createSampleTime(sampleValueSet.LastUpdateTime, timeZoneOffsetUTC, (char *)sampleTime);
           // Define name of the table (arbitrary name + actual year, like: AnalogTestValues2020)
@@ -1896,13 +1887,11 @@ void loop()
           // Create Azure Storage Table if table doesn't exist
           if (localTime.year() != viessmAnalogdataCont01.Year)    // if new year
           {  
-            az_http_status_code theResult = createTable(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedAnalogTableName.c_str());
+            az_http_status_code respCode = createTable(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedAnalogTableName.c_str());
+           
+            Serial.printf("\r\nCreate Table: Statuscode: %s\n", ((String)respCode).c_str());
 
-            // RoSchmi
-            String strResult = (String)theResult;
-            Serial.printf("Returned Stauscode: %s\n", strResult.c_str());
-
-            if ((theResult == AZ_HTTP_STATUS_CODE_CONFLICT) || (theResult == AZ_HTTP_STATUS_CODE_CREATED))
+            if ((respCode == AZ_HTTP_STATUS_CODE_CONFLICT) || (respCode == AZ_HTTP_STATUS_CODE_CREATED))
             {
               viessmAnalogdataCont01.Set_Year(localTime.year());                   
             }
@@ -1941,9 +1930,8 @@ void loop()
           
           #if SERIAL_PRINT == 1
             Serial.printf("Trying to insert %u \r\n", insertCounterApiAnalogTable01);
-            Serial.printf("Analog Table Name: %s \r\n", (const char *)augmentedAnalogTableName.c_str()); 
-          #
-          #endif  
+            Serial.printf("Analog Table Name: %s \r\n\n", (const char *)augmentedAnalogTableName.c_str()); 
+          #endif
              
           // Keep track of tries to insert and check for memory leak
           insertCounterApiAnalogTable01++;
@@ -1956,10 +1944,10 @@ void loop()
 
         } 
         
-        if (dataContainer.hasToBeSent())       // have to send analog values ?
+        if (dataContainer.hasToBeSent())   // have to send analog values read by Device (e.g. noise)?
         {    
           // Retrieve edited sample values from container
-          SampleValueSet sampleValueSet = dataContainer.getCheckedSampleValues(dateTimeUTCNow);
+          SampleValueSet sampleValueSet = dataContainer.getCheckedSampleValues(dateTimeUTCNow, true);
                   
           createSampleTime(sampleValueSet.LastUpdateTime, timeZoneOffsetUTC, (char *)sampleTime);
 
@@ -1975,9 +1963,9 @@ void loop()
           // Create Azure Storage Table if table doesn't exist
           if (localTime.year() != dataContainer.Year)    // if new year
           {  
-            az_http_status_code theResult = createTable(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedAnalogTableName.c_str());
+            az_http_status_code respCode = createTable(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedAnalogTableName.c_str());
                      
-            if ((theResult == AZ_HTTP_STATUS_CODE_CONFLICT) || (theResult == AZ_HTTP_STATUS_CODE_CREATED))
+            if ((respCode == AZ_HTTP_STATUS_CODE_CONFLICT) || (respCode == AZ_HTTP_STATUS_CODE_CREATED))
             {
               dataContainer.Set_Year(localTime.year());                   
             }
@@ -2015,23 +2003,27 @@ void loop()
           
           #if SERIAL_PRINT == 1
             Serial.printf("Trying to insert %u \r\n", insertCounterAnalogTable);
-            Serial.printf("Analog Table Name: %s \r\n", (const char *)augmentedAnalogTableName.c_str()); 
-          #endif  
+            Serial.printf("Analog Table Name: %s \r\n\n", (const char *)augmentedAnalogTableName.c_str()); 
+          #endif
              
           // Keep track of tries to insert and check for memory leak
           insertCounterAnalogTable++;
 
           // RoSchmi, Todo: event. include code to check for memory leaks here
 
-          // Store Entity to Azure Cloud   
+          // Store Entity to Azure Cloud
+             
           __unused az_http_status_code insertResult =  insertTableEntity(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedAnalogTableName.c_str(), analogTableEntity, (char *)EtagBuffer);
                  
         }
         // Now test if Send On/Off values or End of day stuff?
         if (onOffDataContainer.One_hasToBeBeSent(localTime) || isLast15SecondsOfDay)
         {
-          // RoSchmi
-          Serial.println("One On/Off Value has to be sent");        
+          Serial.println(F("..."));
+          #if SERIAL_PRINT == 1
+          Serial.println("One On/Off Value has to be sent");
+          #endif
+
           OnOffSampleValueSet onOffValueSet = onOffDataContainer.GetOnOffValueSet();
 
           for (int i = 0; i < 4; i++)    // Do for 4 OnOff-Tables  
@@ -2048,8 +2040,7 @@ void loop()
               {
                 onOffDataContainer.Reset_hasToBeSent(i);     
                 EntityProperty OnOffPropertiesArray[5];
-
-                // RoSchmi
+               
                 TimeSpan  onTime = onOffValueSet.OnOffSampleValues[i].OnTimeDay;
                 if (lastSwitchTimeDate.operator!=(actTimeDate))
                 {
@@ -2076,9 +2067,9 @@ void loop()
               // Create table if table doesn't exist
               if (localTime.year() != onOffValueSet.OnOffSampleValues[i].Year)
               {
-                 az_http_status_code theResult = createTable(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedOnOffTableName.c_str());
+                 az_http_status_code respCode = createTable(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedOnOffTableName.c_str());
                  
-                 if ((theResult == AZ_HTTP_STATUS_CODE_CONFLICT) || (theResult == AZ_HTTP_STATUS_CODE_CREATED))
+                 if ((respCode == AZ_HTTP_STATUS_CODE_CONFLICT) || (respCode == AZ_HTTP_STATUS_CODE_CREATED))
                  {
                     onOffDataContainer.Set_Year(i, localTime.year());
                  }
@@ -2115,9 +2106,8 @@ void loop()
               OnOffTableEntity onOffTableEntity(partitionKey, rowKey, az_span_create_from_str((char *)sampleTime),  OnOffPropertiesArray, onOffPropertyCount);
           
               onOffValueSet.OnOffSampleValues[i].insertCounter++;
-              
-              // RoSchmi 
-              Serial.printf("OnOff Table Name: %s \r\n", (const char *)augmentedOnOffTableName.c_str());
+                    
+              // Serial.printf("OnOff Table Name: %s \r\n\n", (const char *)augmentedOnOffTableName.c_str());
               // Store Entity to Azure Cloud   
              __unused az_http_status_code insertResult =  insertTableEntity(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedOnOffTableName.c_str(), onOffTableEntity, (char *)EtagBuffer);
               
@@ -2394,12 +2384,32 @@ String floToStr(float value)
   return String(buf);
 }
 
+ViessmannApiSelection::Feature ReadViessmannFeatureFromSelection(const char * pSensorName, uint16_t pFeaturesCountMax100)
+{
+  // preset a 'returnFeature' with value = MAGIC_NUMBER_INVALID (999.9)
+  ViessmannApiSelection::Feature returnFeature;
+  strncpy(returnFeature.value, (floToStr(MAGIC_NUMBER_INVALID)).c_str(), sizeof(returnFeature.value) - 1);
+  
+  uint16_t featuresCount = pFeaturesCountMax100 < 100 ? pFeaturesCountMax100 : 100;
+  for (uint16_t i = 0; i < featuresCount; i++)
+  {
+    if (strcmp((const char *)features[i].name, pSensorName) == 0)
+    {
+      returnFeature = features[i];
+      break;
+    }
+  }
+  return returnFeature;
+}
+
+
 ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, const char* pSensorName)
 {
   // Use values read from the Viessmann API
   // pSensorIndex determins the position (from 4). pSensorName is the name of the feature (see ViessmannApiSelection.h)
-  ViessmannApiSelection::Feature returnFeature;// = ViessmannApiSelection::featureEmpty;
   
+  // preset a 'returnFeature' with value = MAGIC_NUMBER_INVALID (999.9)
+  ViessmannApiSelection::Feature returnFeature;
   strncpy(returnFeature.value, (floToStr(MAGIC_NUMBER_INVALID)).c_str(), sizeof(returnFeature.value) - 1);
   
   // Only read features from the cloud when readInterval has expired
@@ -2420,18 +2430,17 @@ ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, cons
   }
   
   if (analogSensorMgr_Api_01.HasToBeRead(pSensorIndex, dateTimeUTCNow))
+  {
+    for (int i = 0; i < FEATURES_COUNT; i++)
+    {       
+      if (strcmp((const char *)features[i].name, pSensorName) == 0)
       {
-        for (int i = 0; i < FEATURES_COUNT; i++)
-        {
-          
-          if (strcmp((const char *)features[i].name, pSensorName) == 0)
-          {
-            returnFeature = features[i];
-            analogSensorMgr_Api_01.SetReadTimeAndValues(pSensorIndex, dateTimeUTCNow, atof(returnFeature.value), 0.0f, MAGIC_NUMBER_INVALID);           
-            break;
-          }
-        } 
-     }
+        returnFeature = features[i];
+        analogSensorMgr_Api_01.SetReadTimeAndValues(pSensorIndex, dateTimeUTCNow, atof(returnFeature.value), 0.0f, MAGIC_NUMBER_INVALID);           
+        break;
+      }
+    } 
+  }
     
   return returnFeature;
 }
@@ -2456,23 +2465,36 @@ float ReadAnalogSensor(int pSensorIndex)
                         float soundValues[2] = {0};
                         soundValues[0] = feedResult.avValue;
                         soundValues[1] = feedResult.highAvValue;
-                        analogSensorMgr.SetReadTimeAndValues(pSensorIndex, dateTimeUTCNow, soundValues[1], soundValues[0], MAGIC_NUMBER_INVALID);
-                        
+                        analogSensorMgr.SetReadTimeAndValues(pSensorIndex, dateTimeUTCNow, soundValues[1], soundValues[0], MAGIC_NUMBER_INVALID);                 
                         //theRead = feedResult.highAvValue / 10;
-
                         // Function not used in this App, can be used to display another sensor
+                        // theRead = MAGIC_NUMBER_INVALID;
+                      } 
+
+                      // As an example we use it here to display an analog value read from the Viessmann Api   
+                      
+                      // Possible way to get a Viessmann Api Sensor value
+                      ViessmannApiSelection::Feature featureValue = ReadViessmannFeatureFromSelection((const char *)"_7_burner_modulation", FEATURES_COUNT);
+                      theRead = atof((char *)featureValue.value);
+
+                      // This is an alternative way to get a Viessmann Api Sensor valu                      
+                      /*
+                      SampleValueSet featureValueSet = viessmAnalogdataCont01.getCheckedSampleValues(dateTimeUTCNow, false);         
+                      theRead = featureValueSet.SampleValues[1].Value;
+                      */
+
+                      
+
+                      Serial.printf("\r\nApi-Sensor: %.1f\r\n", theRead);
+                       
+                      // Take theRead (nearly) 0.0 as invalid
+                      // (if no sensor is connected the function returns 0)                        
+                      if (theRead > - 0.00001 && theRead < 0.00001)
+                      {
                         theRead = MAGIC_NUMBER_INVALID;
-
-                        // Take theRead (nearly) 0.0 as invalid
-                        // (if no sensor is connected the function returns 0)                        
-                        if (theRead > - 0.00001 && theRead < 0.00001)
-                        {
-                          theRead = MAGIC_NUMBER_INVALID;
-                        }
-                      }                                                                               
+                      }                                                                                                    
                     }
-                    break;
-
+                    break;                   
                 case 1:
                     {
                       if (feedResult.isValid)  
@@ -2841,8 +2863,6 @@ t_httpCode readEquipmentFromApi(X509Certificate pCaCert, ViessmannApiAccount * m
   return responseCode; 
 }
 
-
-
 t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccount * myViessmannApiAccountPtr, const char * refreshToken)
 {
   #if VIESSMANN_TRANSPORT_PROTOCOL == 1
@@ -2863,14 +2883,15 @@ t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccoun
   const char * refreshTokenLabel = "refresh_token";
   const char * tokenTypeLabel = "token_type";
 
-  ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
-   #if SERIAL_PRINT == 1
-        //Serial.println(myViessmannApiAccount.ClientId);
-    #endif
-    
+  ViessmannClient viessmannClient(myViessmannApiAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr); 
       memset(bufferStorePtr,'\0', bufferStoreLength);
       t_httpCode responseCode = viessmannClient.RefreshAccessToken(bufferStorePtr, bufferStoreLength, refreshToken);
-      Serial.printf("\r\nTokenrefresh: httpResponseCode is: %d\r\n", responseCode);
+      
+      Serial.printf("\n(%u) %i/%02d/%02d %02d:%02d ", loadRefreshTokenCount, localTime.year(), 
+                                        localTime.month() , localTime.day(),
+                                        localTime.hour() , localTime.minute());
+      Serial.println(F("Refreshing Access Token"));
+      Serial.printf("(%u) Refresh Token: httpResponseCode: %d\r\n\r\n", loadRefreshTokenCount++, responseCode);
       
       if (responseCode == t_http_codes::HTTP_CODE_OK)
       {    
@@ -2998,7 +3019,6 @@ az_http_status_code insertTableEntity(CloudStorageAccount *pAccountPtr,  X509Cer
   #endif
   */
 
-  // RoSchmi
   TableClient table(pAccountPtr, pCaCert,  httpPtr, &wifi_client, bufferStorePtr);
 
   #if WORK_WITH_WATCHDOG == 1
@@ -3023,10 +3043,12 @@ az_http_status_code insertTableEntity(CloudStorageAccount *pAccountPtr,  X509Cer
   if ((statusCode == AZ_HTTP_STATUS_CODE_NO_CONTENT) || (statusCode == AZ_HTTP_STATUS_CODE_CREATED))
   {
       char codeString[35] {0};
-      sprintf(codeString, "%s %i", "Entity inserted: ", az_http_status_code(statusCode));
+      sprintf(codeString, "%s %i", "Entity inserted: ", statusCode);
       #if SERIAL_PRINT == 1
         Serial.println((char *)codeString);
       #endif
+
+      Serial.printf("\r\n%s %s %i\r\n", pTableName, "Entity inserted: ", az_http_status_code(statusCode));
     
     #if UPDATE_TIME_FROM_AZURE_RESPONSE == 1    // System time shall be updated from the DateTime value of the response ?
     
@@ -3075,8 +3097,7 @@ az_http_status_code insertTableEntity(CloudStorageAccount *pAccountPtr,  X509Cer
       esp_task_wdt_reset();  
     #endif
     delay(1000);
-  }
-  
+  }  
   return statusCode;
 }
 
