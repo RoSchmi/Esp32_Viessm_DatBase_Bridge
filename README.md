@@ -2,7 +2,7 @@
 
 This is an App for an Esp32 Dev Board which retrieves sensor data via the Viessmann Api from the Viessmann Cloud, stores the data in Azure Storage Tables in a special way that they can be graphically visualized with the iPhone App 'Charts4Azure'
 
-![gallery](https://github.com/RoSchmi/Esp32_Viessm_DatBase_Bridge/blob/develop/pictures/Heating_Graph.png)
+![gallery](https://github.com/RoSchmi/Esp32_Viessm_DatBase_Bridge/blob/master/pictures/Heating_Graph.png)
 
 This App is based on the software of my App https://github.com/RoSchmi/Esp32_WiFiManager_HeatingSurvey
 This other App for Esp32 monitors the activity of the burner of an oil-heating
