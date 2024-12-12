@@ -10,9 +10,11 @@
 // used for DaylightSaving Time in minutes
 // Define begin and end of Daylightsaving 
 //
-// Please select the transport protocol, http or https (https is recommended)
-// For https you must include the Root Certificate of your Azure Account
-// like here the 'digicert_globalroot_g2_ca'
+// Please select the transport protocol, https is needed to load data from
+// the Viessmann Cloud. 
+// For https access to the Azure service the Root Certificate of your Azure Account
+// like here the 'digicert_globalroot_g2_ca' must be present in config.h
+// Requests on the Azure service can be made using http protocol as well.
 // Select the Sendinterval in minutes
 // Select the Invalidate Interval in minutes (Sensor values not actualized
 // within this interval are considered to be invalid)
