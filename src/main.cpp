@@ -2,10 +2,10 @@
 
 // Program 'Esp32_Viessm_DatBase_Bridge' Branch Master
 #define PROGRAMVERSION "v1.0.0"
-// Last updated: 2024_11_01
+// Last updated: 2024_12_11
 // Copyright: RoSchmi 2024 License: Apache 2.0
-// the App was tested only on ESP32, not sure if it works on variations of ESP32
-// or ESP8266
+// the App was tested only on ESP32 Dev Board, no attempts were made to run it 
+// on variations of ESP32 or ESP8266
 
 // Uses
 // platform espressif32@6.7.0 and platform_package framework-arduinoespressif32 @ 3.20017.0
@@ -36,14 +36,35 @@
 // the dependency in the 'library.json' file and delete the entry 
 // 'ESP8266_AT_WebServer' in the folder libdeps/ESP32
 
+// This App is based on the software of my App https://github.com/RoSchmi/Esp32_WiFiManager_HeatingSurvey
+// this App for Esp32 monitors the activity of the burner of an oil-heating
+// (or any other noisy thing) by measuring the sound of e.g. the heating burner
+// For details visit the Github Repo of this App 
+//
+// The Story:
+// As I relocated to another city into a house with a Viessmann Vitodens 333F
+// heating. For this heating it was easyly possible to mount a VITOCONNECT 100 OPTO1
+// module which frequently sends sensor data of the heating via WiFi and internet
+// to the Viessmann Cloud and makes it possible to control and monitor the heating 
+// via the 'Vicare' App from Viessmann.
+// Using this App one can see actual sensor data and change settings, but it is not
+// possible to maintain historic sensor data and to display sensor data graphically 
+// as a timeline graph.
+// As Viessmann provides access to the actual heating sensor data via an API
+// I decided to download the sensor data via the API around every minute 
+// (1440 downloads per day are free) and store the values of several sensors
+// on Azure Storage Tables. This is not free but very cheap (only several cents
+// per month) but requires a Microsoft Azure Account.
+// So I made this App which loads the sensor data from the Viessmann Cloud
+// and stores the data in Azure Storage Tables in a certain way.
+// To display these data graphically on an Apple iPhone I use the iPhone App
+// 'Charts4Azure' (Android version and a Microsoft Store App with minor functionality
+// exist as well). The App 'Charts4Azure' allways displays the combination of
+// 4 analog timeline graphs (e.g. 4 temperature sensors) and 4 On/Off timeline graphs 
+// (e.g. for burner or pump activity) on one page.
 
-// This App for Esp32 monitors the activity of the burner of an oil-heating
-// (or any other noisy thing) by measuring the sound of e.g. the heating burner 
-// using an I2S microphone (Adafruit SPH0645 or INMP441)
-// The on/off states are transferred to the Cloud (Azure Storage Tables)
-// via WLAN and internet and can be visulized graphically through the iPhone- or Android-App
-// Charts4Azure.
-// The Router-WiFi Credentials can be entered via a Captive Portal page which is provided for one minute
+// For this Esp App Router-WiFi Credentials, Azure Credentials and Viessmann Credentials
+// can be entered via a Captive Portal page which is provided for one minute
 // by the Esp32 after powering up the device. After having entered the credentials
 // one time they stay permanently on the Esp32 and need not to be entered every time.
 
@@ -56,9 +77,27 @@
 
 // The WiFiManager will open a configuration portal in the WLAN Access-Point for 60 seconds when powered up 
 // if the boards has stored WiFi Credentials, otherwise, the Access Point will stay indefinitely in ConfigPortal 
-// until the Router WiFi Credentials are entered.
-// The Name (SSID) of the Access Point is e.g. ESP32_xxxxxx, if a password is requested (only the first time),
-// the passwort is "My" + the SSID-Name, e.g. MyESP32_xxxxxx.
+// until the Router WiFi Credentials and other Credentials are entered.
+// When the Esp32 starts up it provides an Access Point after about one minute to which you must connect
+// with your iPhone. The SSID of this Access point is like e.g. ESP32_xxxxxx, if a password is requested 
+// (only the first time), the passwort is "My" + the SSID-Name, e.g. MyESP32_xxxxxx.
+// Some settings for the Esp32 App have to be made in the files config.h and config_secret.h.
+// The special config_secret.h for your system must be provided by copying and renaming
+// of config_secret_template.h to config_secret.h
+
+// To access the Viessmann Api through this Esp32 App you to need a Client-Id
+// and a 'Refresh Token' which have to be entered in config_secret.h or
+// in the Captive Portal Page. The Client-Id and an Access-Token (valid for
+// 1 hour can be retrieved from: https://developer.viessmann.com/start/pricing.html
+// (Basic -> Get started)
+// To get a Refresh-Token you can use my C# Windows Application:
+// https://github.com/RoSchmi/RoSchmiViessmannApiTest
+// Valueble info can be found here: 
+// https://www.rustimation.eu/index.php/a-viessmann-api-und-node-red/
+
+// How to get an Azure Account and there a Storage Account have a
+// look here: https://azureiotcharts.home.blog/getting-started-guide/
+
  
 #include <Arduino.h>
 #include <vector>
@@ -146,9 +185,6 @@ ViessmannApiAccount * myViessmannApiAccountPtr = &myViessmannApiAccount;
 
 ViessmannApiSelection viessmannApiSelection(DateTime(), TimeSpan(VIESSMANN_API_READ_INTERVAL_SECONDS));
 ViessmannApiSelection * viessmannApiSelectionPtr = &viessmannApiSelection;
-
-//DataContainerWio dataContainer(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INVALIDATEINTERVAL_MINUTES % 60, 0), (float)MIN_DATAVALUE, (float)MAX_DATAVALUE, (float)MAGIC_NUMBER_INVALID);
-
 
 bool viessmannUserId_is_read = false;
 const uint16_t viessmannUserBufLen = 1000;
@@ -247,7 +283,7 @@ int sendIntervalSeconds = (SENDINTERVAL_MINUTES * 60) < 1 ? 1 : (SENDINTERVAL_MI
 
 DataContainerWio dataContainer(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INVALIDATEINTERVAL_MINUTES % 60, 0), (float)MIN_DATAVALUE, (float)MAX_DATAVALUE, (float)MAGIC_NUMBER_INVALID);
 
-DataContainerWio viessmAnalogdataCont01(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INVALIDATEINTERVAL_MINUTES % 60, 0), (float)MIN_DATAVALUE, (float)MAX_DATAVALUE, (float)MAGIC_NUMBER_INVALID);
+DataContainerWio dataContainerAnalogViessmann01(TimeSpan(sendIntervalSeconds), TimeSpan(0, 0, INVALIDATEINTERVAL_MINUTES % 60, 0), (float)MIN_DATAVALUE, (float)MAX_DATAVALUE, (float)MAGIC_NUMBER_INVALID);
 
 AnalogSensorMgr analogSensorMgr(MAGIC_NUMBER_INVALID);
 
@@ -1785,10 +1821,10 @@ void loop()
 
       // Get readings from 4 different analog sensors stored in the Viessmann Cloud    
       // and store the values in a container 
-      viessmAnalogdataCont01.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value)); // Aussen
-      viessmAnalogdataCont01.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value)); // Vorlauf                
-      viessmAnalogdataCont01.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value)); // Boiler
-      viessmAnalogdataCont01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_92_heating_dhw_outlet_temperature")).value));  // HW-Auslass
+      dataContainerAnalogViessmann01.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value)); // Aussen
+      dataContainerAnalogViessmann01.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value)); // Vorlauf                
+      dataContainerAnalogViessmann01.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value)); // Boiler
+      dataContainerAnalogViessmann01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_7_burner_modulation")).value));  // HW-Auslass
           
       // Get readings from 4 different analog sensors, (preferably measured by the Esp 32 device, e.g. noise level)     
       // and store the values in a container
@@ -1850,7 +1886,7 @@ void loop()
       
         
       // Check if something is to do: send analog data ? send On/Off-Data ? Handle EndOfDay stuff ?
-      if (viessmAnalogdataCont01.hasToBeSent() || dataContainer.hasToBeSent() || onOffDataContainer.One_hasToBeBeSent(localTime) || isLast15SecondsOfDay)
+      if (dataContainerAnalogViessmann01.hasToBeSent() || dataContainer.hasToBeSent() || onOffDataContainer.One_hasToBeBeSent(localTime) || isLast15SecondsOfDay)
       {    
         //Create some buffer
         char sampleTime[25] {0};    // Buffer to hold sampletime        
@@ -1869,10 +1905,10 @@ void loop()
         az_span rowKey = AZ_SPAN_FROM_BUFFER(rowKeySpan);
         
         
-        if (viessmAnalogdataCont01.hasToBeSent())   // have to send analog values read from Viessmann ?
+        if (dataContainerAnalogViessmann01.hasToBeSent())   // have to send analog values read from Viessmann ?
         {
           // Retrieve edited sample values from container
-          SampleValueSet sampleValueSet = viessmAnalogdataCont01.getCheckedSampleValues(dateTimeUTCNow, true);
+          SampleValueSet sampleValueSet = dataContainerAnalogViessmann01.getCheckedSampleValues(dateTimeUTCNow, true);
                   
           createSampleTime(sampleValueSet.LastUpdateTime, timeZoneOffsetUTC, (char *)sampleTime);
           // Define name of the table (arbitrary name + actual year, like: AnalogTestValues2020)
@@ -1885,7 +1921,7 @@ void loop()
           }
 
           // Create Azure Storage Table if table doesn't exist
-          if (localTime.year() != viessmAnalogdataCont01.Year)    // if new year
+          if (localTime.year() != dataContainerAnalogViessmann01.Year)    // if new year
           {  
             az_http_status_code respCode = createTable(myCloudStorageAccountPtr, myX509Certificate, (char *)augmentedAnalogTableName.c_str());
            
@@ -1893,7 +1929,7 @@ void loop()
 
             if ((respCode == AZ_HTTP_STATUS_CODE_CONFLICT) || (respCode == AZ_HTTP_STATUS_CODE_CREATED))
             {
-              viessmAnalogdataCont01.Set_Year(localTime.year());                   
+              dataContainerAnalogViessmann01.Set_Year(localTime.year());                   
             }
             else
             {
@@ -2474,19 +2510,19 @@ float ReadAnalogSensor(int pSensorIndex)
                       // As an example we use it here to display an analog value read from the Viessmann Api   
                       
                       // Possible way to get a Viessmann Api Sensor value
-                      ViessmannApiSelection::Feature featureValue = ReadViessmannFeatureFromSelection((const char *)"_7_burner_modulation", FEATURES_COUNT);
+                      ViessmannApiSelection::Feature featureValue = ReadViessmannFeatureFromSelection((const char *)"_92_heating_dhw_outlet_temperature", FEATURES_COUNT);
                       theRead = atof((char *)featureValue.value);
 
                       // This is an alternative way to get a Viessmann Api Sensor valu                      
                       /*
-                      SampleValueSet featureValueSet = viessmAnalogdataCont01.getCheckedSampleValues(dateTimeUTCNow, false);         
+                      SampleValueSet featureValueSet = dataContainerAnalogViessmann01.getCheckedSampleValues(dateTimeUTCNow, false);         
                       theRead = featureValueSet.SampleValues[1].Value;
                       */
+                     
+                      #if SERIAL_PRINT == 1
+                        Serial.printf("\r\nApi-Sensor: %.1f\r\n", theRead);
+                      #endif
 
-                      
-
-                      Serial.printf("\r\nApi-Sensor: %.1f\r\n", theRead);
-                       
                       // Take theRead (nearly) 0.0 as invalid
                       // (if no sensor is connected the function returns 0)                        
                       if (theRead > - 0.00001 && theRead < 0.00001)
