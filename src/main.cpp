@@ -2,7 +2,7 @@
 
 // Program 'Esp32_Viessm_DatBase_Bridge' Branch Master
 #define PROGRAMVERSION "v1.0.0"
-// Last updated: 2024_12_11
+// Last updated: 2024_12_18
 // Copyright: RoSchmi 2024 License: Apache 2.0
 // the App was tested only on ESP32 Dev Board, no attempts were made to run it 
 // on variations of ESP32 or ESP8266
@@ -1488,8 +1488,6 @@ void setup()
     saveWiFiConfigData();
   }
 
-  
-  
   // Getting posted form values and overriding local variables parameters
   // Config file is written regardless the connection state 
   strcpy(azureAccountName, p_azureAccountName.getValue());
@@ -1768,8 +1766,7 @@ void loop()
   // put your main code here, to run repeatedly:
   if (++loopCounter % 100000 == 0)   // Make decisions to send data every 100000 th round and toggle Led to signal that App is running
   {
-    
-    
+
     #if SERIAL_PRINT == 1
       ledState = !ledState;
       digitalWrite(LED_BUILTIN, ledState);    // toggle LED to signal that App is running
@@ -1824,30 +1821,26 @@ void loop()
 
       // Get readings from 4 different analog sensors stored in the Viessmann Cloud    
       // and store the values in a container
-
+       
+       /*
        double d1 = atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value); // Aussen
        double d2 = atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value); // Aussen
        double d3 = atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value); // Aussen
        double d4 = atof((ReadViessmannApi_Analog_01(3, (const char *)"_7_burner_modulation")).value); // Aussen
-       
-       Serial.printf("TV %.1f\n", d1);
-
+       */
+      // Serial.printf("TV %.1f\n", d1);
+      /*
       dataContainerAnalogViessmann01.SetNewValue(0, dateTimeUTCNow, (float)d1); // Aussen
       dataContainerAnalogViessmann01.SetNewValue(1, dateTimeUTCNow, (float)d2); // Vorlauf                
       dataContainerAnalogViessmann01.SetNewValue(2, dateTimeUTCNow, (float)d3); // Boiler
       dataContainerAnalogViessmann01.SetNewValue(3, dateTimeUTCNow, (float)d4);  // Modulation
+      */
       
-
-
-
-      /*
       dataContainerAnalogViessmann01.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value)); // Aussen
       dataContainerAnalogViessmann01.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value)); // Vorlauf                
       dataContainerAnalogViessmann01.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value)); // Boiler
       dataContainerAnalogViessmann01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_7_burner_modulation")).value));  // Modulation
-      */
-
-
+      
 
       ledState = !ledState;
       digitalWrite(LED_BUILTIN, ledState);    // toggle LED to signal that App is running
@@ -1865,7 +1858,7 @@ void loop()
 
       // Check if automatic OnOffSwitcher has toggled (used to simulate on/off changes)
       // and accordingly change the state of one representation (here index 3) in onOffDataContainer
-      // This can be used for debugging, shows that displayin on/off states is
+      // This can be used for debugging, shows that displaying on/off states is
       // working
       /*
       if (onOffSwitcherWio.hasToggled(dateTimeUTCNow))
@@ -1875,18 +1868,25 @@ void loop()
       }
       */
       
+      // Check if one of the here listed On/Off states has changed     
+      // (here: Burner, Circulation Pump, HotWaterCirculation Pump,
+      // HotWaterPimary Pump)
+
       if (OnOffBurnerStatus.HasChangedState())
       {    
         onOffDataContainer.SetNewOnOffValue(0, OnOffBurnerStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
       }
+
       if (OnOffCirculationPumpStatus.HasChangedState())
       {
         onOffDataContainer.SetNewOnOffValue(1, OnOffCirculationPumpStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
       }
+
       if (OnOffHotWaterCircualtionPumpStatus.HasChangedState())
       {
         onOffDataContainer.SetNewOnOffValue(2, OnOffHotWaterCircualtionPumpStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
       }
+
       if (OnOffHotWaterPrimaryPumpStatus.HasChangedState())
       {
         onOffDataContainer.SetNewOnOffValue(3, OnOffHotWaterPrimaryPumpStatus.GetStateAndResetChangedFlag(), dateTimeUTCNow, timeZoneOffsetUTC);
@@ -1990,23 +1990,6 @@ void loop()
             AnalogPropertiesArray[4] = (EntityProperty)TableEntityProperty((char *)"T_4", (char *)floToStr(sampleValueSet.SampleValues[3].Value).c_str(), (char *)"Edm.String");
           #endif
 
-          #if SERIAL_PRINT == 1
-          Serial.println(F("Viessmann Values"));
-
-          // RoSchmi 13.12.24
-
-          for (int i = 0; i < 4; i++)
-          {
-            Serial.printf("Last: %.1f   Average: %.1f Count: %u Summed: %.1f\r\n", sampleValueSet.SampleValues[i].Value, sampleValueSet.SampleValues[i].AverageValue, sampleValueSet.SampleValues[i].feedCount, sampleValueSet.SampleValues[i].SummedValues);
-          }
-          Serial.println("");
-          /*
-          Serial.printf("Last: %s   Average: %s\r\n", (char *)floToStr(sampleValueSet.SampleValues[0].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[0].AverageValue).c_str());
-          Serial.printf("Last: %s   Average: %s\r\n", (char *)floToStr(sampleValueSet.SampleValues[1].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[1].AverageValue).c_str());
-          Serial.printf("Last: %s   Average: %s\r\n", (char *)floToStr(sampleValueSet.SampleValues[2].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[2].AverageValue).c_str());
-          Serial.printf("Last: %s   Average: %s\r\n\n", (char *)floToStr(sampleValueSet.SampleValues[3].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[3].AverageValue).c_str());
-          */
-          #endif
           // Create the PartitionKey (special format)
           makePartitionKey(analogTablePartPrefix, augmentPartitionKey, localTime, partitionKey, &partitionKeyLength);
           partitionKey = az_span_slice(partitionKey, 0, partitionKeyLength);
@@ -2086,22 +2069,6 @@ void loop()
           AnalogPropertiesArray[2] = (EntityProperty)TableEntityProperty((char *)"T_2", (char *)floToStr(sampleValueSet.SampleValues[1].Value).c_str(), (char *)"Edm.String");
           AnalogPropertiesArray[3] = (EntityProperty)TableEntityProperty((char *)"T_3", (char *)floToStr(sampleValueSet.SampleValues[2].Value).c_str(), (char *)"Edm.String");
           AnalogPropertiesArray[4] = (EntityProperty)TableEntityProperty((char *)"T_4", (char *)floToStr(sampleValueSet.SampleValues[3].Value).c_str(), (char *)"Edm.String");
-          #endif
-
-          #if SERIAL_PRINT == 1
-          Serial.println(F("Device Sensor Values"));
-
-          // RoSchmi 13.12.24
-          for (int i = 0; i < 4; i++)
-          {
-            Serial.printf("Last: %.1f   Average: %.1f Count: %u Summed: %.1f\r\n", sampleValueSet.SampleValues[i].Value, sampleValueSet.SampleValues[i].AverageValue, sampleValueSet.SampleValues[i].feedCount, sampleValueSet.SampleValues[i].SummedValues);
-          }
-          Serial.println("");
-          /*
-          Serial.printf("Last: %s   Average: %s\r\n", (char *)floToStr(sampleValueSet.SampleValues[1].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[1].AverageValue).c_str());
-          Serial.printf("Last: %s   Average: %s\r\n", (char *)floToStr(sampleValueSet.SampleValues[2].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[2].AverageValue).c_str());
-          Serial.printf("Last: %s   Average: %s\r\n\n", (char *)floToStr(sampleValueSet.SampleValues[3].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[3].AverageValue).c_str());
-          */
           #endif
 
           // Create the PartitionKey (special format)

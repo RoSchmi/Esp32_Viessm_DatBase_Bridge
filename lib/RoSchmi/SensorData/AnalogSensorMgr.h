@@ -31,7 +31,6 @@ class AnalogSensorMgr
     AnalogSensor GetSensorDates(int pSensorIndex);
     
     AnalogSensor readValues[SENSOR_COUNT];
-    //float ReadSensor(int pSensorIndex);
     
     private:
       

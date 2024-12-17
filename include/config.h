@@ -38,7 +38,7 @@
 #define SENDINTERVAL_MINUTES   5    // Sendinterval in minutes (5 - 10 is recommended), in this interval                                        
                                     // data are sent to the Cloud (is limited to be not below 1 second)
 
-#define SERIAL_PRINT 1                     // 1 = yes, 0 = no. Select if Serial.print messages are printed
+#define SERIAL_PRINT 0                    // 1 = yes, 0 = no. Select if Serial.print messages are printed
 
 #define _ESPASYNC_WIFIMGR_LOGLEVEL_  0     // ( 0 - 4) Define EspAsync_WiFiManager Loglevel (Debug Messages)
 
@@ -85,7 +85,7 @@
 
 #define API_ANALOG_SENSOR_READ_INTERVAL_SECONDS 77  // Analog Sensor values from the Viessmann Api (seconds, can be 0)
 
-#define VIESSMANN_API_READ_INTERVAL_SECONDS 75  //Vales from the Viessmann Api are read with this timeinterval
+#define VIESSMANN_API_READ_INTERVAL_SECONDS 75  //Values from the Viessmann Api are read with this timeinterval
 
 #define ANALOG_SENSORS_USE_AVERAGE 1             // 1 means: The average from multiple Sensor readings are used
                                                  // 0 means: The last Sensor reading is used
@@ -132,7 +132,7 @@
 
 //#define USE_SIMULATED_SENSORVALUES      // Activates simulated sensor values (sinus curve) or (test values)
 //#define USE_TEST_VALUES                 // Activates sending of test values, e.g. counter or last reset cause (see Code in main.cpp)
-                                        // if activated we select test values, not sinus curves
+                                          // if activated we select test values, not sinus curves
 
 #define SENSOR_1_OFFSET     0.0        // Calibration Offset to sensor No 1
 #define SENSOR_2_OFFSET     0.0        // Calibration Offset to sensor No 2

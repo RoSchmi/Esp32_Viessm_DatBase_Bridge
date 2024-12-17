@@ -53,4 +53,3 @@ AnalogSensor AnalogSensorMgr::GetSensorDates(int pSensorIndex)
 {   
     return readValues[pSensorIndex];  
 }
-

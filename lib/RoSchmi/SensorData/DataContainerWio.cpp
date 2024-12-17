@@ -3,16 +3,12 @@
 SampleValue DataContainerWio::checkedSampleValue(SampleValue inSampleValue, float lowerLimit, float upperLimit, float invalidateSubstitute, DateTime actDateTime, TimeSpan invalidateTime)
 {
     SampleValue workSampleValue = inSampleValue;
-    // RoSchmi 13.12.24
+    
     workSampleValue.AverageValue = ((inSampleValue.AverageValue < lowerLimit) || (inSampleValue.AverageValue > upperLimit)) ? invalidateSubstitute : inSampleValue.AverageValue;
-    // ********
     workSampleValue.Value = ((inSampleValue.Value < lowerLimit) || (inSampleValue.Value > upperLimit)) ? invalidateSubstitute : inSampleValue.Value;
     if (actDateTime.operator-(invalidateTime).operator>=(workSampleValue.LastSendTime))
-    {
-        // RoSchmi 13.12.24
+    {  
         workSampleValue.AverageValue = invalidateSubstitute;
-        // ********
-
         workSampleValue.Value = invalidateSubstitute;
     }
     return workSampleValue;
@@ -31,12 +27,11 @@ void DataContainerWio::SetNewValue(uint32_t pIndex, DateTime pActDateTime, float
 {
     // Ignore invalid readings with value 999.9 (MagicNumberInvalid)
     if (pSampleValue > (MagicNumberInvalid + 0.11) || pSampleValue < (MagicNumberInvalid - 0.11))
-    {
-        // RoSchmi new members
+    { 
         SampleValues[pIndex].feedCount++;
         SampleValues[pIndex].SummedValues += pSampleValue;
         SampleValues[pIndex].AverageValue = SampleValues[pIndex].SummedValues / SampleValues[pIndex].feedCount;
-        // *******
+        
         SampleValues[pIndex].Value = pSampleValue; 
         SampleValues[pIndex].LastSendTime = pActDateTime;
         _SampleValuesSet.LastUpdateTime = pActDateTime;
@@ -87,8 +82,7 @@ void DataContainerWio::setHasToBeSentFlag()
 }
 
 SampleValueSet DataContainerWio::getSampleValues(DateTime pActDateTime, bool pUpdateSentFlags = true)
-{
-    // RoSchmi 13.12.24
+{ 
     if (pUpdateSentFlags)
     {
         _hasToBeSent = false;
@@ -102,7 +96,6 @@ SampleValueSet DataContainerWio::getSampleValues(DateTime pActDateTime, bool pUp
             SampleValues[i].SummedValues = 0.0;
         } 
     }
-    // *********
 
     _SampleValuesSet.SampleValues[0] = SampleValues[0];
     _SampleValuesSet.SampleValues[1] = SampleValues[1];
@@ -111,8 +104,6 @@ SampleValueSet DataContainerWio::getSampleValues(DateTime pActDateTime, bool pUp
     return _SampleValuesSet;
 }
 
-// RoSchmi 13.12.24
-// SampleValueSet DataContainerWio::getCheckedSampleValues(DateTime pActDateTime, bool pUpdateSentFlags = true, bool pGetAverageValue = true)
 SampleValueSet DataContainerWio::getCheckedSampleValues(DateTime pActDateTime, bool pUpdateSentFlags = true)
 {
     if (pUpdateSentFlags)
@@ -122,51 +113,17 @@ SampleValueSet DataContainerWio::getCheckedSampleValues(DateTime pActDateTime, b
         _SampleValuesSet.LastSendTime = _lastSentTime;
         _lastSentTime = pActDateTime;
         
-        // RoSchmi 13.12.24
-
-        
-        Serial.printf("FeedCount: %u \n", SampleValues[0].feedCount);
-        // *********
         for (int i = 0; i < 4; i++)
-        {
-            // RoSchmi 13.12.24
-            // _SampleValuesSet.SampleValues[i].feedCount = 0;
-            // _SampleValuesSet.SampleValues[i].SummedValues = 0.0;
-
+        {      
             SampleValues[i].feedCount = 0;
             SampleValues[i].SummedValues = 0.0;
-
         }
-
-        Serial.println("Flags were resetted");
-        //Serial.printf("FeedCount: %u Summed: %.1f\n", _SampleValuesSet.SampleValues[0].feedCount, _SampleValuesSet.SampleValues[0].SummedValues);
-        Serial.printf("FeedCount: %u Summed: %.1f\n", SampleValues[0].feedCount, SampleValues[0].SummedValues);
-        
-        // *********
     }
 
-    //RoSchmi 13.12.24
-   /*
-   _SampleValuesSet.SampleValues[0] = checkedSampleValue(SampleValues[0], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval, pUpdateSentFlags, pGetAverageValue);
-   _SampleValuesSet.SampleValues[1] = checkedSampleValue(SampleValues[1], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval, pUpdateSentFlags, pGetAverageValue);
-   _SampleValuesSet.SampleValues[2] = checkedSampleValue(SampleValues[2], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval, pUpdateSentFlags, pGetAverageValue);
-   _SampleValuesSet.SampleValues[3] = checkedSampleValue(SampleValues[3], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval, pUpdateSentFlags, pGetAverageValue);
-*/
-   //RoSchmi 13.12.24
-   
    _SampleValuesSet.SampleValues[0] = checkedSampleValue(SampleValues[0], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval);
    _SampleValuesSet.SampleValues[1] = checkedSampleValue(SampleValues[1], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval);
    _SampleValuesSet.SampleValues[2] = checkedSampleValue(SampleValues[2], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval);
    _SampleValuesSet.SampleValues[3] = checkedSampleValue(SampleValues[3], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval);
-   
-   /*
-   _SampleValuesSet.SampleValues[0] = checkedSampleValue(_SampleValuesSet.SampleValues[0], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval);
-   _SampleValuesSet.SampleValues[1] = checkedSampleValue(_SampleValuesSet.SampleValues[1], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval);
-   _SampleValuesSet.SampleValues[2] = checkedSampleValue(_SampleValuesSet.SampleValues[2], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval);
-   _SampleValuesSet.SampleValues[3] = checkedSampleValue(_SampleValuesSet.SampleValues[3], LowerLimit, UpperLimit, MagicNumberInvalid, pActDateTime, InvalidateInterval);
-   */
-   
-     
+    
     return _SampleValuesSet;        
 }
-
