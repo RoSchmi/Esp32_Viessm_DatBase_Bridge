@@ -8,6 +8,9 @@
 
 typedef struct
 {
+    uint32_t feedCount = 0;
+    float SummedValues = 0.0;
+    float AverageValue = 999.9;
     float  Value = 999.9;
     DateTime LastSendTime;  
 }
@@ -29,10 +32,20 @@ public:
     DataContainerWio(TimeSpan pSendInterval, TimeSpan pInvalidateInterval, float pLowerLimit, float pUpperLimit, float pMagicNumberInvalid); 
     
     String floToStr(float value);
-    SampleValue checkedSampleValue(SampleValue inSampleValue, float lowLimit, float upperLimit, float invalidSubstitute,  DateTime actDateTime, TimeSpan invalidateTime);
+    //SampleValue checkedSampleValue(SampleValue inSampleValue, float lowLimit, float upperLimit, float invalidSubstitute,  DateTime actDateTime, TimeSpan,  bool pUpdateSentFlags, bool pGetAverageValue);
+    SampleValue checkedSampleValue(SampleValue inSampleValue, float lowLimit, float upperLimit, float invalidSubstitute,  DateTime actDateTime, TimeSpan);
+    
     void SetNewValue(uint32_t pIndex, DateTime pActDateTime, float pSampleValue);
+    
+    
+    // RoSchmi 13.12.24
+    //SampleValueSet getCheckedSampleValues(DateTime pActDateTime, bool pUpdateSentFlags, bool pGetaverageValue);
     SampleValueSet getCheckedSampleValues(DateTime pActDateTime, bool pUpdateSentFlags);
-    SampleValueSet getSampleValues(DateTime pActDateTime);
+    
+
+    //SampleValueSet getSampleValues(DateTime pActDateTime, bool pUpdateSentFlags, bool pGetAverageValue);
+    SampleValueSet getSampleValues(DateTime pActDateTime, bool pUpdateSentFlags);
+    
     void setHasToBeSentFlag();
     bool hasToBeSent();
     void setLowerLimit(float pLowerLimit);

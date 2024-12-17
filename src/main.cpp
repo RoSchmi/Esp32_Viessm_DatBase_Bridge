@@ -290,7 +290,7 @@ AnalogSensorMgr analogSensorMgr(MAGIC_NUMBER_INVALID);
 AnalogSensorMgr analogSensorMgr_Api_01(MAGIC_NUMBER_INVALID);
 
 OnOffDataContainerWio onOffDataContainer;
-
+ 
 OnOffSwitcherWio onOffSwitcherWio;
 
 // Possible configuration for Adafruit Huzzah Esp32
@@ -1769,8 +1769,11 @@ void loop()
   if (++loopCounter % 100000 == 0)   // Make decisions to send data every 100000 th round and toggle Led to signal that App is running
   {
     
-    ledState = !ledState;
-    digitalWrite(LED_BUILTIN, ledState);    // toggle LED to signal that App is running
+    
+    #if SERIAL_PRINT == 1
+      ledState = !ledState;
+      digitalWrite(LED_BUILTIN, ledState);    // toggle LED to signal that App is running
+    #endif
 
     #if WORK_WITH_WATCHDOG == 1
       esp_task_wdt_reset();
@@ -1820,12 +1823,35 @@ void loop()
       bool isLast15SecondsOfDay = (localTime.hour() == 23 && localTime.minute() == 59 &&  localTime.second() > 45) ? true : false;
 
       // Get readings from 4 different analog sensors stored in the Viessmann Cloud    
-      // and store the values in a container 
+      // and store the values in a container
+
+       double d1 = atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value); // Aussen
+       double d2 = atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value); // Aussen
+       double d3 = atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value); // Aussen
+       double d4 = atof((ReadViessmannApi_Analog_01(3, (const char *)"_7_burner_modulation")).value); // Aussen
+       
+       Serial.printf("TV %.1f\n", d1);
+
+      dataContainerAnalogViessmann01.SetNewValue(0, dateTimeUTCNow, (float)d1); // Aussen
+      dataContainerAnalogViessmann01.SetNewValue(1, dateTimeUTCNow, (float)d2); // Vorlauf                
+      dataContainerAnalogViessmann01.SetNewValue(2, dateTimeUTCNow, (float)d3); // Boiler
+      dataContainerAnalogViessmann01.SetNewValue(3, dateTimeUTCNow, (float)d4);  // Modulation
+      
+
+
+
+      /*
       dataContainerAnalogViessmann01.SetNewValue(0, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(0, (const char *)"_95_heating_temperature_outside")).value)); // Aussen
       dataContainerAnalogViessmann01.SetNewValue(1, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(1, (const char *)"_3_temperature_main")).value)); // Vorlauf                
       dataContainerAnalogViessmann01.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value)); // Boiler
-      dataContainerAnalogViessmann01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_7_burner_modulation")).value));  // HW-Auslass
-          
+      dataContainerAnalogViessmann01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_7_burner_modulation")).value));  // Modulation
+      */
+
+
+
+      ledState = !ledState;
+      digitalWrite(LED_BUILTIN, ledState);    // toggle LED to signal that App is running
+    
       // Get readings from 4 different analog sensors, (preferably measured by the Esp 32 device, e.g. noise level)     
       // and store the values in a container
       dataContainer.SetNewValue(0, dateTimeUTCNow, ReadAnalogSensor(0));
@@ -1833,6 +1859,10 @@ void loop()
       dataContainer.SetNewValue(2, dateTimeUTCNow, ReadAnalogSensor(2));
       dataContainer.SetNewValue(3, dateTimeUTCNow, ReadAnalogSensor(3));
       
+      ledState = !ledState;
+      digitalWrite(LED_BUILTIN, ledState);    // toggle LED to signal that App is running
+    
+
       // Check if automatic OnOffSwitcher has toggled (used to simulate on/off changes)
       // and accordingly change the state of one representation (here index 3) in onOffDataContainer
       // This can be used for debugging, shows that displayin on/off states is
@@ -1863,7 +1893,7 @@ void loop()
       }
       
       
-      // This is for Burner Sound Sensor (not used here)    
+      // This is for Burner Sound Sensor (need not to be used in this App)    
       if (feedResult.isValid && (feedResult.hasToggled || feedResult.analogToSend))
       {
           if (feedResult.hasToggled)
@@ -1903,7 +1933,6 @@ void loop()
         char rowKeySpan[25] {0};
         size_t rowKeyLength = 0;
         az_span rowKey = AZ_SPAN_FROM_BUFFER(rowKeySpan);
-        
         
         if (dataContainerAnalogViessmann01.hasToBeSent())   // have to send analog values read from Viessmann ?
         {
@@ -1946,12 +1975,38 @@ void loop()
           // (SampleTime and 4 samplevalues)
           size_t analogPropertyCount = 5;
           EntityProperty AnalogPropertiesArray[5];
-          AnalogPropertiesArray[0] = (EntityProperty)TableEntityProperty((char *)"SampleTime", (char *) sampleTime, (char *)"Edm.String");
-          AnalogPropertiesArray[1] = (EntityProperty)TableEntityProperty((char *)"T_1", (char *)floToStr(sampleValueSet.SampleValues[0].Value).c_str(), (char *)"Edm.String");
-          AnalogPropertiesArray[2] = (EntityProperty)TableEntityProperty((char *)"T_2", (char *)floToStr(sampleValueSet.SampleValues[1].Value).c_str(), (char *)"Edm.String");
-          AnalogPropertiesArray[3] = (EntityProperty)TableEntityProperty((char *)"T_3", (char *)floToStr(sampleValueSet.SampleValues[2].Value).c_str(), (char *)"Edm.String");
-          AnalogPropertiesArray[4] = (EntityProperty)TableEntityProperty((char *)"T_4", (char *)floToStr(sampleValueSet.SampleValues[3].Value).c_str(), (char *)"Edm.String");
-          
+
+          #if ANALOG_SENSORS_USE_AVERAGE == 1
+            AnalogPropertiesArray[0] = (EntityProperty)TableEntityProperty((char *)"SampleTime", (char *) sampleTime, (char *)"Edm.String");
+            AnalogPropertiesArray[1] = (EntityProperty)TableEntityProperty((char *)"T_1", (char *)floToStr(sampleValueSet.SampleValues[0].AverageValue).c_str(), (char *)"Edm.String");
+            AnalogPropertiesArray[2] = (EntityProperty)TableEntityProperty((char *)"T_2", (char *)floToStr(sampleValueSet.SampleValues[1].AverageValue).c_str(), (char *)"Edm.String");
+            AnalogPropertiesArray[3] = (EntityProperty)TableEntityProperty((char *)"T_3", (char *)floToStr(sampleValueSet.SampleValues[2].AverageValue).c_str(), (char *)"Edm.String");
+            AnalogPropertiesArray[4] = (EntityProperty)TableEntityProperty((char *)"T_4", (char *)floToStr(sampleValueSet.SampleValues[3].AverageValue).c_str(), (char *)"Edm.String");         
+          #else
+            AnalogPropertiesArray[0] = (EntityProperty)TableEntityProperty((char *)"SampleTime", (char *) sampleTime, (char *)"Edm.String");
+            AnalogPropertiesArray[1] = (EntityProperty)TableEntityProperty((char *)"T_1", (char *)floToStr(sampleValueSet.SampleValues[0].Value).c_str(), (char *)"Edm.String");
+            AnalogPropertiesArray[2] = (EntityProperty)TableEntityProperty((char *)"T_2", (char *)floToStr(sampleValueSet.SampleValues[1].Value).c_str(), (char *)"Edm.String");
+            AnalogPropertiesArray[3] = (EntityProperty)TableEntityProperty((char *)"T_3", (char *)floToStr(sampleValueSet.SampleValues[2].Value).c_str(), (char *)"Edm.String");
+            AnalogPropertiesArray[4] = (EntityProperty)TableEntityProperty((char *)"T_4", (char *)floToStr(sampleValueSet.SampleValues[3].Value).c_str(), (char *)"Edm.String");
+          #endif
+
+          #if SERIAL_PRINT == 1
+          Serial.println(F("Viessmann Values"));
+
+          // RoSchmi 13.12.24
+
+          for (int i = 0; i < 4; i++)
+          {
+            Serial.printf("Last: %.1f   Average: %.1f Count: %u Summed: %.1f\r\n", sampleValueSet.SampleValues[i].Value, sampleValueSet.SampleValues[i].AverageValue, sampleValueSet.SampleValues[i].feedCount, sampleValueSet.SampleValues[i].SummedValues);
+          }
+          Serial.println("");
+          /*
+          Serial.printf("Last: %s   Average: %s\r\n", (char *)floToStr(sampleValueSet.SampleValues[0].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[0].AverageValue).c_str());
+          Serial.printf("Last: %s   Average: %s\r\n", (char *)floToStr(sampleValueSet.SampleValues[1].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[1].AverageValue).c_str());
+          Serial.printf("Last: %s   Average: %s\r\n", (char *)floToStr(sampleValueSet.SampleValues[2].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[2].AverageValue).c_str());
+          Serial.printf("Last: %s   Average: %s\r\n\n", (char *)floToStr(sampleValueSet.SampleValues[3].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[3].AverageValue).c_str());
+          */
+          #endif
           // Create the PartitionKey (special format)
           makePartitionKey(analogTablePartPrefix, augmentPartitionKey, localTime, partitionKey, &partitionKeyLength);
           partitionKey = az_span_slice(partitionKey, 0, partitionKeyLength);
@@ -2020,11 +2075,35 @@ void loop()
           size_t analogPropertyCount = 5;
           EntityProperty AnalogPropertiesArray[5];
           AnalogPropertiesArray[0] = (EntityProperty)TableEntityProperty((char *)"SampleTime", (char *) sampleTime, (char *)"Edm.String");
+
+          #if ANALOG_SENSORS_USE_AVERAGE == 1
+          AnalogPropertiesArray[1] = (EntityProperty)TableEntityProperty((char *)"T_1", (char *)floToStr(sampleValueSet.SampleValues[0].AverageValue).c_str(), (char *)"Edm.String");
+          AnalogPropertiesArray[2] = (EntityProperty)TableEntityProperty((char *)"T_2", (char *)floToStr(sampleValueSet.SampleValues[1].AverageValue).c_str(), (char *)"Edm.String");
+          AnalogPropertiesArray[3] = (EntityProperty)TableEntityProperty((char *)"T_3", (char *)floToStr(sampleValueSet.SampleValues[2].AverageValue).c_str(), (char *)"Edm.String");
+          AnalogPropertiesArray[4] = (EntityProperty)TableEntityProperty((char *)"T_4", (char *)floToStr(sampleValueSet.SampleValues[3].AverageValue).c_str(), (char *)"Edm.String");
+          #else
           AnalogPropertiesArray[1] = (EntityProperty)TableEntityProperty((char *)"T_1", (char *)floToStr(sampleValueSet.SampleValues[0].Value).c_str(), (char *)"Edm.String");
           AnalogPropertiesArray[2] = (EntityProperty)TableEntityProperty((char *)"T_2", (char *)floToStr(sampleValueSet.SampleValues[1].Value).c_str(), (char *)"Edm.String");
           AnalogPropertiesArray[3] = (EntityProperty)TableEntityProperty((char *)"T_3", (char *)floToStr(sampleValueSet.SampleValues[2].Value).c_str(), (char *)"Edm.String");
           AnalogPropertiesArray[4] = (EntityProperty)TableEntityProperty((char *)"T_4", (char *)floToStr(sampleValueSet.SampleValues[3].Value).c_str(), (char *)"Edm.String");
-  
+          #endif
+
+          #if SERIAL_PRINT == 1
+          Serial.println(F("Device Sensor Values"));
+
+          // RoSchmi 13.12.24
+          for (int i = 0; i < 4; i++)
+          {
+            Serial.printf("Last: %.1f   Average: %.1f Count: %u Summed: %.1f\r\n", sampleValueSet.SampleValues[i].Value, sampleValueSet.SampleValues[i].AverageValue, sampleValueSet.SampleValues[i].feedCount, sampleValueSet.SampleValues[i].SummedValues);
+          }
+          Serial.println("");
+          /*
+          Serial.printf("Last: %s   Average: %s\r\n", (char *)floToStr(sampleValueSet.SampleValues[1].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[1].AverageValue).c_str());
+          Serial.printf("Last: %s   Average: %s\r\n", (char *)floToStr(sampleValueSet.SampleValues[2].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[2].AverageValue).c_str());
+          Serial.printf("Last: %s   Average: %s\r\n\n", (char *)floToStr(sampleValueSet.SampleValues[3].Value).c_str(), (char *)floToStr(sampleValueSet.SampleValues[3].AverageValue).c_str());
+          */
+          #endif
+
           // Create the PartitionKey (special format)
           makePartitionKey(analogTablePartPrefix, augmentPartitionKey, localTime, partitionKey, &partitionKeyLength);
           partitionKey = az_span_slice(partitionKey, 0, partitionKeyLength);
@@ -2520,7 +2599,7 @@ float ReadAnalogSensor(int pSensorIndex)
                       */
                      
                       #if SERIAL_PRINT == 1
-                        Serial.printf("\r\nApi-Sensor: %.1f\r\n", theRead);
+                        //Serial.printf("\r\nApi-Sensor: %.1f\r\n", theRead);
                       #endif
 
                       // Take theRead (nearly) 0.0 as invalid
@@ -2574,7 +2653,7 @@ float ReadAnalogSensor(int pSensorIndex)
                     break;
               }
             }                    
-            return theRead ;
+            return (float)theRead ;
 #endif
 
 #ifdef USE_SIMULATED_SENSORVALUES
@@ -2932,7 +3011,7 @@ t_httpCode refreshAccessTokenFromApi(X509Certificate pCaCert, ViessmannApiAccoun
       if (responseCode == t_http_codes::HTTP_CODE_OK)
       {    
          #if SERIAL_PRINT == 1
-          Serial.printf("%s\n", (char *)bufferStorePtr);
+          // Serial.printf("%s\n", (char *)bufferStorePtr);
          #endif
          bool tokenIsValid = true;
          char * posAcTok = strnstr((char *)bufferStorePtr, (const char *)"access_token", 50);

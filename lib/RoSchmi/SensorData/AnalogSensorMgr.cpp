@@ -4,8 +4,6 @@
  //AnalogSensor readValues[SENSOR_COUNT];
  float MagicNumberInvalid = 999.9;
 
-
- 
  AnalogSensorMgr::AnalogSensorMgr(float pMagicNumberInvalid)
  {
      MagicNumberInvalid = pMagicNumberInvalid;

@@ -35,10 +35,10 @@
 #define SOUNDSWITCHER_UPDATEINTERVAL 400    // Interval in ms for reading sound level
 #define SOUNDSWITCHER_READ_DELAYTIME 4000   // Delay in ms from switch to displayed value
 
-#define SENDINTERVAL_MINUTES   10    // Sendinterval in minutes (10 is recommended), in this interval                                        
-                                      // data are sent to the Cloud (is limited to be not below 1 second)
+#define SENDINTERVAL_MINUTES   5    // Sendinterval in minutes (5 - 10 is recommended), in this interval                                        
+                                    // data are sent to the Cloud (is limited to be not below 1 second)
 
-#define SERIAL_PRINT 0                     // 1 = yes, 0 = no. Select if Serial.print messages are printed
+#define SERIAL_PRINT 1                     // 1 = yes, 0 = no. Select if Serial.print messages are printed
 
 #define _ESPASYNC_WIFIMGR_LOGLEVEL_  0     // ( 0 - 4) Define EspAsync_WiFiManager Loglevel (Debug Messages)
 
@@ -86,6 +86,9 @@
 #define API_ANALOG_SENSOR_READ_INTERVAL_SECONDS 77  // Analog Sensor values from the Viessmann Api (seconds, can be 0)
 
 #define VIESSMANN_API_READ_INTERVAL_SECONDS 75  //Vales from the Viessmann Api are read with this timeinterval
+
+#define ANALOG_SENSORS_USE_AVERAGE 1             // 1 means: The average from multiple Sensor readings are used
+                                                 // 0 means: The last Sensor reading is used
 
 #define VIESSMANN_TOKEN_REFRESH_INTERVAL_SECONDS 60 * 30 // Viessman AccessToken is refreshed using this timeInterval
 
