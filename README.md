@@ -42,16 +42,22 @@ In config.h the timezone offset and the parameter for dayligthsavingtime must be
 To access the Viessmann Api through this Esp32 App you to need a 'Client-Id' and a 'Refresh Token' (valid for 180 days), which have to be entered in config_secret.h or through the WiFi Mangager Captive Portal Page. 
 The Refresh token enables the App to repeatedly load new access tokens which are needed to download data through the Viessmann Api. Aaccess Tokens are only valid for one hour.
 
-The Client-Id, Access-Token (valid for 1 hour) and Refresh-Token can be retrieved from: https://developer.viessmann.com/start/pricing.html (Basic -> Get started)
+The Client-Id, Access-Token (valid for 1 hour) and Refresh-Token can be retrieved from: 
+
+https://developer.viessmann.com/start/pricing.html (Basic -> Get started)
 
 To get a Refresh-Token you can use my C# Windows Application:
 
 https://github.com/RoSchmi/RoSchmiViessmannApiTest together with an Internet Browser 
 
-More Valueble informations can be found here: 
+More Valueble informations can be found here:
+
 https://www.rustimation.eu/index.php/a-viessmann-api-und-node-red/
+
 https://github.com/philippoo66/optolink-splitter
+
 https://github.com/openv
+
 https://github.com/philipdaubmeier/GraphIoT
 
 To learn how to get an Azure Account, a Storage Account and a Storage Account key have a look here: 
