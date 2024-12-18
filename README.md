@@ -39,8 +39,8 @@ Although the necessary custom configuration (e.g. Credentials) can be made throu
 The adapted config_secret.h for your needs/system must be provided by copying and renaming of config_secret_template.h to config_secret.h. In config_secret.h you can preset your first time custom Credentials for your personal WLAN-Network, Azure Storage Account, Viessmann Client-Id and Viessmann Refresh Token (Can be entered through WiFi-Manager as well). 
 In config.h the timezone offset and the parameter for dayligthsavingtime must be changed if you are not located in Germany.
 
-To access the Viessmann Api through this Esp32 App you to need a 'Client-Id' and a 'Refresh Token' (valid for 180 days), which have to be entered in config_secret.h or through the WiFi Mangager Captive Portal Page. 
-The Refresh token enables the App to repeatedly load new access tokens which are needed to download data through the Viessmann Api. Aaccess Tokens are only valid for one hour.
+To access the Viessmann Api through this Esp32 App you need a 'Client-Id' and a 'Refresh Token' (valid for 180 days), which have to be entered in config_secret.h or through the WiFi Manager Captive Portal Page. 
+The Refresh token enables the App to repeatedly load new access tokens which are needed to download data through the Viessmann Api. Access Tokens are valid only for one hour.
 
 The Client-Id, Access-Token (valid for 1 hour) and Refresh-Token can be retrieved from: 
 
@@ -50,7 +50,7 @@ To get a Refresh-Token you can use my C# Windows Application:
 
 https://github.com/RoSchmi/RoSchmiViessmannApiTest together with an Internet Browser 
 
-More Valueble informations can be found here:
+More valuable information can be found here:
 
 https://www.rustimation.eu/index.php/a-viessmann-api-und-node-red/
 
