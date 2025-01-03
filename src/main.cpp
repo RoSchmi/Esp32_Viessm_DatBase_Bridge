@@ -2,7 +2,7 @@
 
 // Program 'Esp32_Viessm_DatBase_Bridge' Branch Master
 #define PROGRAMVERSION "v1.0.0"
-// Last updated: 2024_12_18
+// Last updated: 2025_01_03
 // Copyright: RoSchmi 2024 License: Apache 2.0
 // the App was tested only on ESP32 Dev Board, no attempts were made to run it 
 // on variations of ESP32 or ESP8266
@@ -1796,8 +1796,6 @@ void loop()
       // Get offset in minutes between UTC and local time with consideration of DST
       int timeZoneOffsetUTC = myTimezone.utcIsDST(dateTimeUTCNow.unixtime()) ? TIMEZONEOFFSET + DSTOFFSET : TIMEZONEOFFSET;
       
-      // RoSchmi
-      //DateTime localTime = myTimezone.toLocal(dateTimeUTCNow.unixtime());
       localTime = myTimezone.toLocal(dateTimeUTCNow.unixtime());
       
       // refresh access token if refresh interval has expired 
@@ -1894,6 +1892,7 @@ void loop()
       
       
       // This is for Burner Sound Sensor (need not to be used in this App)    
+      /*
       if (feedResult.isValid && (feedResult.hasToggled || feedResult.analogToSend))
       {
           if (feedResult.hasToggled)
@@ -1913,6 +1912,7 @@ void loop()
             Serial.println();
           }           
       }
+      */
       
         
       // Check if something is to do: send analog data ? send On/Off-Data ? Handle EndOfDay stuff ?
