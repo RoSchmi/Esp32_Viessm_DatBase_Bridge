@@ -42,7 +42,7 @@
 
 #define _ESPASYNC_WIFIMGR_LOGLEVEL_  0     // ( 0 - 4) Define EspAsync_WiFiManager Loglevel (Debug Messages)
 
-// Cave it's dangerous to display WiFi password in a Captive Portal page
+// Cave: It's dangerous to display WiFi password in a Captive Portal page
 // Should always be set to false
 #define DISPLAY_STORED_CREDENTIALS_IN_CP false // Define if stored Router SSIDs are displayed (should normally by set to false)
                                                 // Cave: it's dangerous to show the passwords. So don't do it !!!                                    
