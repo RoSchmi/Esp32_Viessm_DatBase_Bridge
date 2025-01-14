@@ -84,19 +84,15 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
     //https://arduinojson.org/v7/how-to/use-arduinojson-with-httpclient/
 
     _viessmannHttpPtr ->useHTTP10(true);   // Must be reset to false for Azure requests
-    //RoSchmi
-    //Serial.println(F("Set httpClient to true"));   // Is needed to load the long features JSON string 
+                                           // Is needed to load the long features JSON string
+
+    //Serial.println(F("Set httpClient to true"));   
     _viessmannHttpPtr ->begin(Url);
-    //RoSchmi
-    //Serial.println(F("After begin"));
+    
     _viessmannHttpPtr ->addHeader("Authorization", authorizationHeader); 
-        //RoSchmi      
-        //Serial.println(F("Performing GET Request"));
-         
+               
     t_httpCode httpResponseCode = _viessmannHttpPtr ->GET();
-        //RoSchmi
-        //Serial.println(F("Back from GET Request"));
-         
+                
     if (httpResponseCode > 0) 
     { 
         if (httpResponseCode == HTTP_CODE_OK)
@@ -146,98 +142,98 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
             strncpy(apiSelectionPtr-> _7_burner_modulation.timestamp, doc["data"][7]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _7_burner_modulation.value, valLen - 1, "%.0f", (float)doc["data"][7]["properties"]["value"]["value"]);
             
-            Serial.println(F("Doc 3"));
+            //Serial.println(F("Doc 3"));
 
             apiSelectionPtr -> _8_burner_hours.idx = 8;
             strncpy(apiSelectionPtr -> _8_burner_hours.name, doc["data"][8]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _8_burner_hours.timestamp, doc["data"][8]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _8_burner_hours.value, valLen - 1, "%.2f", (float)doc["data"][8]["properties"]["hours"]["value"]);
         
-            Serial.println(F("Doc 4"));
+            //Serial.println(F("Doc 4"));
 
             apiSelectionPtr -> _8_burner_starts.idx = 8;
             strncpy(apiSelectionPtr -> _8_burner_starts.name, doc["data"][8]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _8_burner_starts.timestamp, doc["data"][8]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _8_burner_starts.value, valLen - 1, "%.0f", (float)doc["data"][8]["properties"]["starts"]["value"]);
             
-            Serial.println(F("Doc 5"));
+            //Serial.println(F("Doc 5"));
 
             apiSelectionPtr -> _9_burner_is_active.idx = 9;
             strncpy(apiSelectionPtr -> _9_burner_is_active.name, doc["data"][9]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _9_burner_is_active.timestamp, doc["data"][9]["timestamp"], stampLen - 1);
             strcpy(apiSelectionPtr -> _9_burner_is_active.value, (boolean)doc["data"][9]["properties"]["active"]["value"] ? "true" : "false");
             
-            Serial.println(F("Doc 6"));
+            //Serial.println(F("Doc 6"));
 
             apiSelectionPtr -> _11_circulation_pump_status.idx = 11;
             strncpy(apiSelectionPtr -> _11_circulation_pump_status.name, doc["data"][11]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr -> _11_circulation_pump_status.timestamp, doc["data"][11]["timestamp"], stampLen - 1);
             strncpy(apiSelectionPtr -> _11_circulation_pump_status.value, doc["data"][11]["properties"]["status"]["value"], valLen -1);
 
-            Serial.println(F("Doc 7"));
+            //Serial.println(F("Doc 7"));
 
             apiSelectionPtr -> _23_heating_curve_shift.idx = 23;
             strncpy(apiSelectionPtr -> _23_heating_curve_shift.name, doc["data"][23]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _23_heating_curve_shift.timestamp, doc["data"][23]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _23_heating_curve_shift.value, valLen - 1, "%.1f", (float)doc["data"][23]["properties"]["shift"]["value"]);
         
-            Serial.println(F("Doc 8"));
+            //Serial.println(F("Doc 8"));
 
             apiSelectionPtr -> _23_heating_curve_slope.idx = 23;
             strncpy(apiSelectionPtr -> _23_heating_curve_slope.name, doc["data"][23]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _23_heating_curve_slope.timestamp, doc["data"][23]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _23_heating_curve_slope.value, valLen - 1, "%.1f", (float)doc["data"][23]["properties"]["slope"]["value"]);
 
-            Serial.println(F("Doc 9"));
+            //Serial.println(F("Doc 9"));
 
             apiSelectionPtr -> _77_temperature_supply.idx = 77;
             strncpy(apiSelectionPtr -> _77_temperature_supply.name, doc["data"][77]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _77_temperature_supply.timestamp, doc["data"][77]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _77_temperature_supply.value, valLen - 1, "%.1f", (float)doc["data"][77]["properties"]["value"]["value"]);
 
-            Serial.println(F("Doc 10"));
+            //Serial.println(F("Doc 10"));
 
             apiSelectionPtr -> _85_heating_dhw_charging.idx = 85;
             strncpy(apiSelectionPtr -> _85_heating_dhw_charging.name, doc["data"][85]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _85_heating_dhw_charging.timestamp, doc["data"][85]["timestamp"], stampLen - 1);
             strcpy(apiSelectionPtr -> _85_heating_dhw_charging.value, (boolean)doc["data"][85]["properties"]["active"]["value"] ? "true" : "false");
 
-            Serial.println(F("Doc 11"));
+            //Serial.println(F("Doc 11"));
 
             apiSelectionPtr -> _86_heating_dhw_pump_status.idx = 86;
             strncpy(apiSelectionPtr -> _86_heating_dhw_pump_status.name, doc["data"][86]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr -> _86_heating_dhw_pump_status.timestamp, doc["data"][86]["timestamp"], stampLen - 1);
             strncpy(apiSelectionPtr -> _86_heating_dhw_pump_status.value, doc["data"][86]["properties"]["status"]["value"], valLen -1);
             
-            Serial.println(F("Doc 12"));
+            //Serial.println(F("Doc 12"));
 
             apiSelectionPtr -> _88_heating_dhw_pump_primary_status.idx = 88;
             strncpy(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.name, doc["data"][88]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.timestamp, doc["data"][88]["timestamp"], stampLen - 1);
             strncpy(apiSelectionPtr -> _88_heating_dhw_pump_primary_status.value, doc["data"][88]["properties"]["status"]["value"], valLen -1);
 
-            Serial.println(F("Doc 13"));
+            //Serial.println(F("Doc 13"));
 
             apiSelectionPtr -> _90_heating_dhw_cylinder_temperature.idx = 90;
             strncpy(apiSelectionPtr -> _90_heating_dhw_cylinder_temperature.name, doc["data"][90]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _90_heating_dhw_cylinder_temperature.timestamp, doc["data"][90]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _90_heating_dhw_cylinder_temperature.value, valLen - 1, "%.1f", (float)doc["data"][90]["properties"]["value"]["value"]);
 
-            Serial.println(F("Doc 14"));
+            //Serial.println(F("Doc 14"));
 
             apiSelectionPtr -> _92_heating_dhw_outlet_temperature.idx = 92;
             strncpy(apiSelectionPtr -> _92_heating_dhw_outlet_temperature.name, doc["data"][92]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _92_heating_dhw_outlet_temperature.timestamp, doc["data"][92]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _92_heating_dhw_outlet_temperature.value, valLen - 1, "%.1f", (float)doc["data"][92]["properties"]["value"]["value"]);
             
-            Serial.println(F("Doc 15"));
+            //Serial.println(F("Doc 15"));
 
             apiSelectionPtr -> _93_heating_dhw_main_temperature.idx = 93;
             strncpy(apiSelectionPtr -> _93_heating_dhw_main_temperature.name, doc["data"][93]["feature"], nameLen - 1);
             strncpy(apiSelectionPtr-> _93_heating_dhw_main_temperature.timestamp, doc["data"][93]["timestamp"], stampLen - 1);
             snprintf(apiSelectionPtr -> _93_heating_dhw_main_temperature.value, valLen - 1, "%.1f", (float)doc["data"][93]["properties"]["value"]["value"]);
             
-            Serial.println(F("Doc 16"));
+            //Serial.println(F("Doc 16"));
 
             apiSelectionPtr -> _95_heating_temperature_outside.idx = 95;
             strncpy(apiSelectionPtr -> _95_heating_temperature_outside.name, doc["data"][95]["feature"], nameLen - 1);
