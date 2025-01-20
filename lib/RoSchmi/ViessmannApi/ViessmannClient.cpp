@@ -134,7 +134,7 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
                 snprintf(tempVal, sizeof(tempVal), "%.2f", (float)doc["data"][8]["properties"]["hours"]["value"]);
                 snprintf(apiSelectionPtr -> _8_burner_hours.value, valLen - 1, (const char*)tempVal);
             
-                //Serial.println(F("Doc 4"));
+                Serial.println(F("Doc 4"));
 
                 apiSelectionPtr -> _8_burner_starts.idx = 8;
                 strncpy(apiSelectionPtr -> _8_burner_starts.name, doc["data"][8]["feature"], nameLen - 1);
@@ -142,14 +142,14 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
                 snprintf(tempVal, sizeof(tempVal), "%.0f", (float)doc["data"][8]["properties"]["starts"]["value"]);
                 snprintf(apiSelectionPtr -> _8_burner_starts.value, valLen - 1, (const char*)tempVal);
             
-                //Serial.println(F("Doc 5"));
+                Serial.println(F("Doc 5"));
 
                 apiSelectionPtr -> _9_burner_is_active.idx = 9;
                 strncpy(apiSelectionPtr -> _9_burner_is_active.name, doc["data"][9]["feature"], nameLen - 1);
                 strncpy(apiSelectionPtr-> _9_burner_is_active.timestamp, doc["data"][9]["timestamp"], stampLen - 1);
                 strcpy(apiSelectionPtr -> _9_burner_is_active.value, (boolean)doc["data"][9]["properties"]["active"]["value"] ? "true" : "false");
             
-                //Serial.println(F("Doc 6"));
+                Serial.println(F("Doc 6"));
 
                 apiSelectionPtr -> _11_circulation_pump_status.idx = 11;
                 strncpy(apiSelectionPtr -> _11_circulation_pump_status.name, doc["data"][11]["feature"], nameLen - 1);
@@ -164,17 +164,17 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
                 snprintf(tempVal, sizeof(tempVal), "%.0f", (float)doc["data"][23]["properties"]["shift"]["value"]);
                 snprintf(apiSelectionPtr -> _23_heating_curve_shift.value, valLen - 1, (const char*)tempVal);
                        
-                Serial.println(F("Doc 8"));
-                Serial.printf("%s   %s   %s\n", apiSelectionPtr -> _23_heating_curve_shift.name, apiSelectionPtr -> _23_heating_curve_shift.timestamp, apiSelectionPtr -> _23_heating_curve_shift.value);
+                //Serial.println(F("Doc 8"));
+                //Serial.printf("%s   %s   %s\n", apiSelectionPtr -> _23_heating_curve_shift.name, apiSelectionPtr -> _23_heating_curve_shift.timestamp, apiSelectionPtr -> _23_heating_curve_shift.value);
         
                 apiSelectionPtr -> _23_heating_curve_slope.idx = 23;
                 strncpy(apiSelectionPtr -> _23_heating_curve_slope.name, doc["data"][23]["feature"], nameLen - 1);
-                strncpy(apiSelectionPtr-> _23_heating_curve_slope.timestamp, doc["data"][23]["timestamp"], stampLen - 1);
+                strncpy(apiSelectionPtr -> _23_heating_curve_slope.timestamp, doc["data"][23]["timestamp"], stampLen - 1);
                 snprintf(tempVal, sizeof(tempVal), "%.1f", (float)doc["data"][23]["properties"]["slope"]["value"]);
                 snprintf(apiSelectionPtr -> _23_heating_curve_slope.value, valLen - 1, (const char*)tempVal);
                        
-                Serial.println(F("Doc 9"));
-                Serial.printf("%s   %s   %s\n", apiSelectionPtr -> _23_heating_curve_slope.name, apiSelectionPtr -> _23_heating_curve_slope.timestamp, apiSelectionPtr -> _23_heating_curve_slope.value);
+                //Serial.println(F("Doc 9"));
+                //Serial.printf("%s   %s   %s\n", apiSelectionPtr -> _23_heating_curve_slope.name, apiSelectionPtr -> _23_heating_curve_slope.timestamp, apiSelectionPtr -> _23_heating_curve_slope.value);
         
                 apiSelectionPtr -> _77_temperature_supply.idx = 77;
                 strncpy(apiSelectionPtr -> _77_temperature_supply.name, doc["data"][77]["feature"], nameLen - 1);
@@ -219,8 +219,8 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
                 snprintf(tempVal, sizeof(tempVal), "%.1f", (float)doc["data"][92]["properties"]["value"]["value"]);
                 snprintf(apiSelectionPtr -> _92_heating_dhw_outlet_temperature.value, valLen - 1, (const char*)tempVal);
             
-                Serial.println(F("Doc 15"));
-                Serial.printf("%s   %s   %s\n", apiSelectionPtr -> _92_heating_dhw_outlet_temperature.name, apiSelectionPtr -> _92_heating_dhw_outlet_temperature.timestamp, apiSelectionPtr -> _92_heating_dhw_outlet_temperature.value);
+                //Serial.println(F("Doc 15"));
+                //Serial.printf("%s   %s   %s\n", apiSelectionPtr -> _92_heating_dhw_outlet_temperature.name, apiSelectionPtr -> _92_heating_dhw_outlet_temperature.timestamp, apiSelectionPtr -> _92_heating_dhw_outlet_temperature.value);
         
                 apiSelectionPtr -> _93_heating_dhw_main_temperature.idx = 93;
                 strncpy(apiSelectionPtr -> _93_heating_dhw_main_temperature.name, doc["data"][93]["feature"], nameLen - 1);
@@ -228,18 +228,17 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
                 snprintf(tempVal, sizeof(tempVal), "%.1f", (float)doc["data"][93]["properties"]["value"]["value"]);
                 snprintf(apiSelectionPtr -> _93_heating_dhw_main_temperature.value, valLen - 1, (const char*)tempVal);
                       
-                Serial.println(F("Doc 16"));
-                Serial.printf("%s   %s   %s\n", apiSelectionPtr -> _93_heating_dhw_main_temperature.name, apiSelectionPtr -> _93_heating_dhw_main_temperature.timestamp, apiSelectionPtr -> _93_heating_dhw_main_temperature.value);
+                //Serial.println(F("Doc 16"));
+                //Serial.printf("%s   %s   %s\n", apiSelectionPtr -> _93_heating_dhw_main_temperature.name, apiSelectionPtr -> _93_heating_dhw_main_temperature.timestamp, apiSelectionPtr -> _93_heating_dhw_main_temperature.value);
         
-
                 apiSelectionPtr -> _95_heating_temperature_outside.idx = 95;
                 strncpy(apiSelectionPtr -> _95_heating_temperature_outside.name, doc["data"][95]["feature"], nameLen - 1);
                 strncpy(apiSelectionPtr-> _95_heating_temperature_outside.timestamp, doc["data"][95]["timestamp"], stampLen - 1);
                 snprintf(tempVal, sizeof(tempVal), "%.1f", (float)doc["data"][95]["properties"]["value"]["value"]);
                 snprintf(apiSelectionPtr -> _95_heating_temperature_outside.value, valLen - 1, (const char*)tempVal);
                             
-                Serial.println(F("Doc 17"));
-                Serial.printf("%s   %s   %s\n", apiSelectionPtr -> _95_heating_temperature_outside.name, apiSelectionPtr -> _95_heating_temperature_outside.timestamp, apiSelectionPtr -> _95_heating_temperature_outside.value);   
+                //Serial.println(F("Doc 17"));
+                //Serial.printf("%s   %s   %s\n", apiSelectionPtr -> _95_heating_temperature_outside.name, apiSelectionPtr -> _95_heating_temperature_outside.timestamp, apiSelectionPtr -> _95_heating_temperature_outside.value);   
             }
             else
             {
@@ -273,7 +272,7 @@ t_httpCode ViessmannClient::GetFeatures(uint8_t* responseBuffer, const uint16_t 
     }
     _viessmannHttpPtr ->useHTTP10(false);
     _viessmannHttpPtr->end();
-    Serial.println(F("Returning"));
+    //Serial.println(F("Returning"));
     return httpResponseCode;
 }
 
