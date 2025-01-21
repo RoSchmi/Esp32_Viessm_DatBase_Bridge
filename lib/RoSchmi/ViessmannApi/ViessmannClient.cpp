@@ -332,11 +332,7 @@ t_httpCode ViessmannClient::RefreshAccessToken(uint8_t* responseBuffer, const ui
                 delay(500);          
             }
         }
-        _viessmannHttpPtr->end();
-        
-        //delay(1000);
-    
-       // _viessmannHttpPtr->end();
+        _viessmannHttpPtr->end();  
     
     return httpResponseCode;
 }
