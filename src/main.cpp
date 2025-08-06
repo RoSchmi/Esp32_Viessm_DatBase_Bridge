@@ -462,6 +462,7 @@ uint8_t connectMultiWiFi();
   #define ESP_getChipId()   ((uint32_t)ESP.getEfuseMac())
 
   #define LED_BUILTIN       2
+  //#define LED_BUILTIN       14
   #define LED_ON            HIGH
   #define LED_OFF           LOW
 
@@ -1277,6 +1278,7 @@ void setup()
   ssid.toUpperCase();
   password = "My" + ssid;
 
+
   // RoSchmi new
   // Extra parameters to be configured
   // After connecting, parameter.getValue() will get you the configured value
@@ -1839,10 +1841,9 @@ void loop()
       dataContainerAnalogViessmann01.SetNewValue(2, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(2, (const char *)"_90_heating_dhw_cylinder_temperature")).value)); // Boiler
       dataContainerAnalogViessmann01.SetNewValue(3, dateTimeUTCNow, atof((ReadViessmannApi_Analog_01(3, (const char *)"_7_burner_modulation")).value));  // Modulation
       
-
       ledState = !ledState;
       digitalWrite(LED_BUILTIN, ledState);    // toggle LED to signal that App is running
-    
+
       // Get readings from 4 different analog sensors, (preferably measured by the Esp 32 device, e.g. noise level)     
       // and store the values in a container
       dataContainer.SetNewValue(0, dateTimeUTCNow, ReadAnalogSensor(0));
@@ -1852,7 +1853,6 @@ void loop()
       
       ledState = !ledState;
       digitalWrite(LED_BUILTIN, ledState);    // toggle LED to signal that App is running
-    
 
       // Check if automatic OnOffSwitcher has toggled (used to simulate on/off changes)
       // and accordingly change the state of one representation (here index 3) in onOffDataContainer
@@ -2500,8 +2500,7 @@ ViessmannApiSelection::Feature ReadViessmannApi_Analog_01(int pSensorIndex, cons
     httpCode = readFeaturesFromApi(myX509Certificate, myViessmannApiAccountPtr, Data_0_Id, Gateways_0_Serial, Gateways_0_Devices_0_Id, viessmannApiSelectionPtr);
     if (httpCode == t_http_codes::HTTP_CODE_OK)
     {
-      viessmannApiSelection.lastReadTime = dateTimeUTCNow;
-      //Serial.println(F("\n"));
+      viessmannApiSelection.lastReadTime = dateTimeUTCNow;  
     }
     else
     {
