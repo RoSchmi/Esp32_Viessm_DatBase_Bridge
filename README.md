@@ -1,5 +1,7 @@
  ### Esp32_Viessm_DatBase_Bridge
 
+(This App is actually not working since Viessmann changed their API and uri)
+
 This is an App for an Esp32 Dev Board which retrieves sensor data via the Viessmann Api from the Viessmann Cloud and stores the data in Azure Storage Tables in a special way that they can be graphically visualized as time series graphs with my iPhone App **'Charts4Azure'**.
 
 ![gallery](https://github.com/RoSchmi/Esp32_Viessm_DatBase_Bridge/blob/master/pictures/Heating_Graph_2.PNG)
