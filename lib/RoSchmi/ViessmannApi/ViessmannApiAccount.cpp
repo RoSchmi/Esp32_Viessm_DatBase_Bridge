@@ -10,12 +10,12 @@
  * @param useHttps 
  * @return * constructor 
  */
-ViessmannApiAccount::ViessmannApiAccount(String clientId, String accessToken, String apiIot, String apiUser, String apiToken, bool useHttps )
+ViessmannApiAccount::ViessmannApiAccount(const String clientId, const String accessToken, const String apiIot, const String apiUser, const String apiToken, const bool useHttps, const bool useCaCert)
 {
-    ChangeAccountParams(clientId, accessToken, apiIot, apiUser, apiToken, useHttps);   
+    ChangeAccountParams(clientId, accessToken, apiIot, apiUser, apiToken, useHttps, useCaCert);   
 }
 
-void ViessmannApiAccount::ChangeAccountParams(String clientId, String accessToken, String apiIot, String apiUser, String apiToken, bool useHttps)
+void ViessmannApiAccount::ChangeAccountParams(const String clientId, const String accessToken, const String apiIot, const String apiUser, const String apiToken, const bool useHttps, const bool useCaCert)
 {
     ClientId = clientId;
     ClientId = (clientId.length() <= MAX_CLIENT_ID_LENGTH) ? clientId : clientId.substring(0, MAX_CLIENT_ID_LENGTH);
@@ -23,10 +23,15 @@ void ViessmannApiAccount::ChangeAccountParams(String clientId, String accessToke
     ApiIotUrl = apiIot;
     ApiUserUrl = apiIot;
     ApiTokenUrl = apiToken;
+
+    UseHttps = useHttps;
+    UseCaCert = useCaCert;
     
     const char * insert = (char *)useHttps ? "s" : "";
     int baseLength = apiIot.length() > apiUser.length() ? apiIot.length() : apiUser.length();
-    char strData[baseLength + 30];
+    // RoSchmi baseLength must be constant
+    //char strData[baseLength + 30];
+    char strData[60 + 30];
     
     sprintf(strData, "http%s://%s", insert, apiIot.c_str());
     UriEndPointIot = String(strData);
@@ -38,15 +43,7 @@ void ViessmannApiAccount::ChangeAccountParams(String clientId, String accessToke
     UriEndPointToken = String(strData);
 }
 
-void ViessmannApiAccount::RenewAccessToken(String accessToken)
+void ViessmannApiAccount::RenewAccessToken(const String accessToken)
 {
     AccessToken = accessToken;
 }
-
-
-
-/**
- * destructor
- */
-ViessmannApiAccount::~ViessmannApiAccount()
-{}
