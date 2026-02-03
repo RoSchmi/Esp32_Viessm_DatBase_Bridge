@@ -1,55 +1,78 @@
 #include <Arduino.h>
-#include "DateTime.h"
+#include <ArduinoJson.h>
+#include "config.h"
 
 #ifndef _VIESSMANNAPISELECTION_H_
 #define _VIESSMANNAPISELECTION_H_
 
-#define FEATUREVALUELENGTH 12
-#define FEATURENAMELENGTH 60
-#define FEATURESTAMPLENGTH 30
+#define VI_FEATUREVALUELENGTH 30
+#define VI_FEATUREKEYLENGTH 30
+#define VI_FEATURENAMELENGTH 60
+#define VI_FEATURESTAMPLENGTH 30
 
+// Must be high enough to create an array 
+// to hold all interesting features
+#define VI_FEATURES_COUNT 18
+
+// Maximal wie viele Werte ein Feature enthalten kann 
+#define VI_MAX_VALUES_PER_FEATURE 4
+
+typedef struct VI_FeatureValue {
+        char key[VI_FEATUREKEYLENGTH];
+        char value[VI_FEATUREVALUELENGTH];
+    }VI_FeatureValue;
+
+typedef struct VI_Feature {
+        int  idx = 0;
+        char name[VI_FEATURENAMELENGTH]; 
+        char timestamp[VI_FEATURESTAMPLENGTH];
+        VI_FeatureValue values[VI_MAX_VALUES_PER_FEATURE];
+        int valueCount = 0;
+    }VI_Feature;
+
+// Array of interesting feature entries to be extracted
+// See definition in ViessmannApiSelection.cpp   
+extern VI_Feature vi_features[VI_FEATURES_COUNT];
+
+VI_Feature* getFeatureByName(VI_Feature* features, int featureCount, const char* name);
+    
 class ViessmannApiSelection
 {
-    public:  
-    int  valueLength = FEATUREVALUELENGTH;
-    int nameLenght = FEATURENAMELENGTH;
-    int stampLength = FEATURESTAMPLENGTH;
+    private:
+    //classLabel is used to find instance in memory (debugging)  
+    char classLabel[11] = "Vi-Api-Sel";
+    char objLabel[11] = "none";
+    char endLabel[9] = "Endlabel";
+     
+    public:
 
-    DateTime  lastReadTime;
-    TimeSpan readInterval;
-    
-    typedef struct Feature
-    { 
-        int  idx = 0;    
-        char name[FEATURENAMELENGTH] = {0};
-        char timestamp[FEATURESTAMPLENGTH] = {0};     
-        char value[FEATUREVALUELENGTH] = {0};       
-    }Feature;
+    // Ein Eintrag beschreibt: 
+    // - welches Feature 
+    // - welches Property innerhalb dieses Features 
+    struct InterestingProperty { 
+    const char* featureName; 
+    const char* propertyName;
+};
+
+// Deklaration der statischen Liste 
+static const InterestingProperty interestingProperties[]; 
+// Anzahl der Einträge 
+static const int NUM_INTERESTING_PROPERTIES;
+
+   public:
+    int64_t lastReadTimeSeconds;
+    int32_t readIntervalSeconds;
 
     ViessmannApiSelection();
-    ViessmannApiSelection(DateTime pLastReadTime, TimeSpan pReadInterval);
-    ~ViessmannApiSelection();
+    ViessmannApiSelection(const char * pObjLabel, int64_t pLastReadTimeSeconds, int32_t pReadIntervalSeconds);
     
-    //static Feature featureEmpty;
+    // Extracts the items listed in .cpp (interestingProperties) out of all items in the JSON doc returned by the Viessmann API. 
+    // - doc: JsonDocument containing the full Viessmann API response 
+    // - features: Array of feature entries to be filled with the selected data
+    // - featureCount: Number of items in the features array
 
-    Feature _3_temperature_main;
-    Feature _5_boiler_temperature;
-    Feature _7_burner_modulation;
-    Feature _8_burner_hours;
-    Feature _8_burner_starts;
-    Feature _9_burner_is_active;
-    Feature _11_circulation_pump_status;
-    Feature _23_heating_curve_shift;
-    Feature _23_heating_curve_slope;
-    Feature _77_temperature_supply;
-    Feature _85_heating_dhw_charging;
-    Feature _86_heating_dhw_pump_status;
-    Feature _88_heating_dhw_pump_primary_status;
-    Feature _90_heating_dhw_cylinder_temperature;
-    Feature _92_heating_dhw_outlet_temperature;
-    Feature _93_heating_dhw_main_temperature;
-    Feature _95_heating_temperature_outside;
-     
+    void extractFeatures(const JsonDocument& doc, VI_Feature* features, int featureCount);
+         
 };
 
 #endif

@@ -21,9 +21,9 @@
 // Define other settings according to your needs
 
 // Uri defining where to get data from the Viessmann API
-#define VIESSMANN_USER_BASE_URI  "api.viessmann.com/users/v1/users/me";
-#define VIESSMANN_IOT_BASE_URI "api.viessmann.com/iot/v1/";
-#define VIESSMANN_TOKEN_BASE_URI "iam.viessmann.com/idp/v3/token";
+#define VIESSMANN_USER_BASE_URI  "api.viessmann-climatesolutions.com/users/v1/users/me";
+#define VIESSMANN_IOT_BASE_URI "api.viessmann-climatesolutions.com/iot/v2/";
+#define VIESSMANN_TOKEN_BASE_URI "iam.viessmann-climatesolutions.com/idp/v3/token";
 
 // The credentials of your WiFi router and the name and key of your
 // Azure Storage Account are set through WiFi-Manager
@@ -118,8 +118,8 @@
 #define  DST_STOP_HOUR               3       // 0 - 23
        
                                         // For Viessmann Api both must be https !!
-#define TRANSPORT_PROTOCOL 1            // 0 = http, 1 = https
-#define VIESSMANN_TRANSPORT_PROTOCOL 1  // 0 = http, 1 = https
+#define AZURE_TRANSPORT_PROTOCOL 1      // 0 = http, 1 = https
+//#define VIESSMANN_TRANSPORT_PROTOCOL 1  // 0 = http, 1 = https
                                  
 
 #define USE_STATIC_IP 0                // 1 = use static IpAddress, 0 = use DHCP
